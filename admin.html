@@ -2,19 +2,17 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Admin | AJE COINS</title>
+  <title>Admin Login</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
-<h1>Panel Administrador</h1>
+<h2>Login Admin</h2>
 
-<input type="file" id="excelFile" accept=".xlsx">
-<button onclick="procesarExcel()">Procesar Excel</button>
+<input id="user" placeholder="Usuario">
+<input id="pass" type="password" placeholder="Contraseña">
+<button onclick="loginAdmin()">Entrar</button>
 
-<p id="resultado"></p>
-
-<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
