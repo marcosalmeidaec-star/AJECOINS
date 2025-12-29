@@ -1,0 +1,42 @@
+body {
+  font-family: Arial, sans-serif;
+  background: #111;
+  color: white;
+  text-align: center;
+}
+
+header {
+  background: #ff6a00;
+  padding: 20px;
+}
+
+input {
+  display: block;
+  margin: 10px auto;
+  padding: 8px;
+  width: 200px;
+}
+
+button {
+  padding: 10px 15px;
+  background: #ff6a00;
+  border: none;
+  color: white;
+  cursor: pointer;
+}
+
+.catalogo {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+}
+
+.item {
+  background: #222;
+  padding: 15px;
+  border-radius: 8px;
+}
+
+.item img {
+  width: 120px;
+}
