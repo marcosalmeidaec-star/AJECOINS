@@ -1,25 +1,101 @@
+/* 🌿 COLORES BASE */
+:root {
+  --verde-principal: #1f9d55;
+  --verde-secundario: #4ade80;
+  --verde-claro: #e9f7ef;
+  --blanco: #ffffff;
+  --gris-texto: #374151;
+}
+
+/* 🔹 GENERAL */
 body {
-  font-family: Arial;
-  padding: 20px;
-  background: #f5f5f5;
+  font-family: Arial, sans-serif;
+  background: var(--verde-claro);
+  color: var(--gris-texto);
+  text-align: center;
+  padding: 30px;
+  margin: 0;
 }
 
+/* 🔹 TITULOS */
 h1 {
-  color: #f4b400;
+  color: var(--verde-principal);
+  margin-bottom: 20px;
 }
 
+h2 {
+  color: var(--verde-principal);
+  margin-top: 30px;
+}
+
+/* 🔹 LOGIN */
+.login-box {
+  background: var(--blanco);
+  padding: 25px;
+  width: 280px;
+  margin: auto;
+  border-radius: 12px;
+  box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+}
+
+/* 🔹 INPUTS */
+input {
+  width: 90%;
+  padding: 10px;
+  margin: 10px 0;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+  font-size: 14px;
+}
+
+/* 🔹 BOTONES */
+button {
+  padding: 12px 18px;
+  background: var(--verde-principal);
+  color: white;
+  border: none;
+  cursor: pointer;
+  border-radius: 8px;
+  font-size: 14px;
+  transition: background 0.3s;
+}
+
+button:hover {
+  background: #15803d;
+}
+
+/* 🔹 CATALOGO */
 .catalogo {
   display: flex;
-  gap: 20px;
+  justify-content: center;
+  gap: 25px;
+  margin-top: 30px;
+  flex-wrap: wrap;
 }
 
+/* 🔹 ITEM */
 .item {
-  background: white;
-  padding: 10px;
-  border-radius: 10px;
-  text-align: center;
+  background: var(--blanco);
+  padding: 20px;
+  width: 180px;
+  border-radius: 15px;
+  box-shadow: 0 8px 15px rgba(0,0,0,0.1);
 }
 
+.item p {
+  margin: 8px 0;
+  font-weight: bold;
+}
+
+/* 🔹 IMAGEN */
 .item img {
-  width: 120px;
+  width: 110px;
+  margin-bottom: 10px;
+}
+
+/* 🔹 ADMIN */
+#resultado {
+  margin-top: 15px;
+  color: var(--verde-principal);
+  font-weight: bold;
 }
