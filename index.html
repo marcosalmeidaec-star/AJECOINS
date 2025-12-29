@@ -2,22 +2,18 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>AJE COINS</title>
+  <title>Login | AJE COINS</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body class="center">
 
 <h1>AJE COINS</h1>
 
-<button onclick="setTipo('admin')">Admin</button>
-<button onclick="setTipo('usuario')">Usuario</button>
+<input id="user" placeholder="Cédula o admin">
+<input id="pass" type="password" placeholder="Contraseña">
 
-<script>
-function setTipo(t) {
-  localStorage.setItem("tipo_login", t);
-  window.location.href = "login.html";
-}
-</script>
+<button onclick="login()">Ingresar</button>
 
+<script src="app.js"></script>
 </body>
 </html>
