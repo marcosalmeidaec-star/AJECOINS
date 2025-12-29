@@ -7,20 +7,17 @@
 </head>
 <body class="center">
 
-  <h1>AJE COINS</h1>
-  <p>Selecciona cómo deseas ingresar</p>
+<h1>AJE COINS</h1>
 
-  <div class="login-box">
-    <button onclick="irLogin('admin')">Entrar como Admin</button>
-    <button onclick="irLogin('usuario')">Entrar como Usuario</button>
-  </div>
+<button onclick="setTipo('admin')">Admin</button>
+<button onclick="setTipo('usuario')">Usuario</button>
 
-  <script>
-    function irLogin(tipo) {
-      localStorage.setItem("tipo_login", tipo);
-      window.location.href = "login.html";
-    }
-  </script>
+<script>
+function setTipo(t) {
+  localStorage.setItem("tipo_login", t);
+  window.location.href = "login.html";
+}
+</script>
 
 </body>
 </html>
