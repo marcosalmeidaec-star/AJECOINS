@@ -1,58 +1,45 @@
 body {
   font-family: Arial, sans-serif;
-  background: #f4fff7;
-  color: #1b5e20;
-  margin: 0;
-  padding: 20px;
+  background: #f4fff4;
+  color: #0a3;
+  text-align: center;
 }
 
 .center {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
+  margin-top: 100px;
 }
 
-.login-box {
-  display: flex;
-  gap: 20px;
+input, button {
+  padding: 10px;
+  margin: 5px;
+  border-radius: 5px;
+  border: 1px solid #0a3;
 }
 
 button {
-  background: #2e7d32;
+  background: #0a3;
   color: white;
-  border: none;
-  padding: 12px 22px;
-  border-radius: 8px;
   cursor: pointer;
-  font-size: 15px;
 }
 
 button:hover {
-  background: #1b5e20;
-}
-
-input {
-  margin: 8px;
-  padding: 10px;
-  border-radius: 6px;
-  border: 1px solid #c8e6c9;
+  background: #087;
 }
 
 .catalogo {
   display: flex;
+  justify-content: center;
   gap: 20px;
 }
 
 .item {
   background: white;
+  border: 1px solid #0a3;
   padding: 15px;
   border-radius: 10px;
-  text-align: center;
-  width: 180px;
+  width: 200px;
 }
 
 .item img {
-  width: 120px;
+  width: 100px;
 }
