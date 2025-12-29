@@ -1,34 +1,27 @@
-// ======================
-// NAVEGACIÓN
-// ======================
-function irAdmin() {
-  window.location.href = "/AJECOINS/admin.html";
-}
-
-function irUsuario() {
-  window.location.href = "/AJECOINS/login.html";
-}
-
-// ======================
-// LOGIN USUARIO
-// ======================
-function loginUsuario() {
+// ===============================
+// LOGIN
+// ===============================
+function login() {
   const user = document.getElementById("user").value;
   const pass = document.getElementById("pass").value;
 
-  if (user !== "" && user === pass) {
-    localStorage.setItem("usuario_actual", user);
-    window.location.href = "/AJECOINS/usuario.html";
-  } else {
-    alert("Credenciales incorrectas");
+  if (user === "admin" && pass === "admin123") {
+    window.location.href = "admin.html";
+    return;
   }
+
+  if (user === pass && user !== "") {
+    localStorage.setItem("usuario_actual", user);
+    window.location.href = "usuario.html";
+    return;
+  }
+
+  alert("Credenciales incorrectas");
 }
 
-// ======================
+// ===============================
 // ADMIN - PROCESAR EXCEL
-// Columnas esperadas:
-// fecha | cedula | vendedor | cedis | coins_ganados
-// ======================
+// ===============================
 function procesarExcel() {
   const file = document.getElementById("excelFile").files[0];
   if (!file) {
@@ -45,29 +38,45 @@ function procesarExcel() {
     const rows = XLSX.utils.sheet_to_json(sheet);
 
     let baseCoins = {};
+    const tbody = document.querySelector("#tablaDatos tbody");
+    tbody.innerHTML = "";
 
     rows.forEach(r => {
+      if (!r.cedula) return;
+
       baseCoins[r.cedula] = {
+        fecha: r.fecha,
         cedula: r.cedula,
         vendedor: r.vendedor,
         cedis: r.cedis,
-        coins_ganados: r.coins_ganados,
+        coins_ganados: Number(r.coins_ganados),
         coins_usados: 0,
-        coins_actuales: r.coins_ganados,
-        fecha: r.fecha
+        coins_actuales: Number(r.coins_ganados)
       };
+
+      // 🔹 pintar tabla
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${r.fecha || ""}</td>
+        <td>${r.cedula}</td>
+        <td>${r.vendedor || ""}</td>
+        <td>${r.cedis || ""}</td>
+        <td>${r.coins_ganados}</td>
+      `;
+      tbody.appendChild(tr);
     });
 
     localStorage.setItem("baseCoins", JSON.stringify(baseCoins));
-    document.getElementById("resultado").innerText = "Excel cargado correctamente";
+    document.getElementById("resultado").innerText =
+      "Excel cargado correctamente. Registros: " + rows.length;
   };
 
   reader.readAsArrayBuffer(file);
 }
 
-// ======================
-// MOSTRAR COINS USUARIO
-// ======================
+// ===============================
+// USUARIO - MOSTRAR COINS
+// ===============================
 const usuario = localStorage.getItem("usuario_actual");
 const baseCoins = JSON.parse(localStorage.getItem("baseCoins")) || {};
 
@@ -78,9 +87,9 @@ if (usuario && baseCoins[usuario]) {
   }
 }
 
-// ======================
+// ===============================
 // CANJEAR
-// ======================
+// ===============================
 function canjear(valor) {
   if (!baseCoins[usuario] || baseCoins[usuario].coins_actuales < valor) {
     alert("No tienes coins suficientes");
@@ -91,6 +100,6 @@ function canjear(valor) {
   baseCoins[usuario].coins_usados += valor;
 
   localStorage.setItem("baseCoins", JSON.stringify(baseCoins));
-  alert("Canje exitoso");
+  alert("Canje realizado con éxito");
   location.reload();
 }
