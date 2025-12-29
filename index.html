@@ -2,35 +2,19 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>AJE Coins</title>
+  <title>AJE COINS | Login</title>
   <link rel="stylesheet" href="styles.css">
-
-  <!-- SheetJS -->
-  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
-
-  <!-- Firebase -->
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 </head>
-
 <body>
-  <h1>🪙 AJE COINS</h1>
 
-  <input type="file" id="excelInput" accept=".xlsx,.xls">
-  <button onclick="leerExcel()">Procesar Excel</button>
+<h1>AJE COINS</h1>
 
-  <div id="resultado"></div>
+<div class="login-box">
+  <input type="text" id="user" placeholder="Usuario / Cédula">
+  <input type="password" id="pass" placeholder="Contraseña">
+  <button onclick="login()">Ingresar</button>
+</div>
 
-  <h2>Catálogo</h2>
-  <div class="catalogo">
-    <div class="item">
-      <img src="catalogo/taza.png">
-      <p>Taza – 500 coins</p>
-      <button onclick="canjear(500, 'Taza')">Canjear</button>
-    </div>
-  </div>
-
-  <script src="app.js"></script>
+<script src="app.js"></script>
 </body>
 </html>
