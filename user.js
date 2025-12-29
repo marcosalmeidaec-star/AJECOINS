@@ -1,4 +1,3 @@
-// PROTECCIÓN DE RUTA
 const session = JSON.parse(sessionStorage.getItem('aje_session') || '{}');
 if (!session || session.role !== 'user') {
   alert('Debes iniciar sesión');
@@ -22,8 +21,7 @@ const renderCatalogo = (disponibles) => {
       <img src="${item.img}" alt="${item.nombre}">
       <h3>${item.nombre}</h3>
       <p>${item.precio} Coins</p>
-      <button ${disponibles < item.precio ? 'disabled' : ''} 
-              onclick="canjear(${item.precio}, '${item.nombre}')">
+      <button onclick="canjear(${item.precio}, '${item.nombre}')" ${disponibles < item.precio ? 'disabled' : ''}>
         ${disponibles < item.precio ? 'Insuficiente' : 'Canjear'}
       </button>
     </div>
@@ -33,7 +31,7 @@ const renderCatalogo = (disponibles) => {
 const updateDisplay = () => {
   const userData = loadData();
   if (!userData) {
-    document.getElementById('coins').innerHTML = '<span class="error">Usuario no encontrado</span>';
+    document.getElementById('coins').innerHTML = '<span class="error">Error al cargar datos</span>';
     return;
   }
   document.getElementById('coins').textContent = `Tienes ${userData.coins_actuales} AJE COINS`;
