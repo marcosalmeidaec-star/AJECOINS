@@ -1,101 +1,58 @@
-/* 🌿 COLORES BASE */
-:root {
-  --verde-principal: #1f9d55;
-  --verde-secundario: #4ade80;
-  --verde-claro: #e9f7ef;
-  --blanco: #ffffff;
-  --gris-texto: #374151;
-}
-
-/* 🔹 GENERAL */
 body {
   font-family: Arial, sans-serif;
-  background: var(--verde-claro);
-  color: var(--gris-texto);
-  text-align: center;
-  padding: 30px;
+  background: #f4fff7;
+  color: #1b5e20;
   margin: 0;
+  padding: 20px;
 }
 
-/* 🔹 TITULOS */
-h1 {
-  color: var(--verde-principal);
-  margin-bottom: 20px;
+.center {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
 }
 
-h2 {
-  color: var(--verde-principal);
-  margin-top: 30px;
-}
-
-/* 🔹 LOGIN */
 .login-box {
-  background: var(--blanco);
-  padding: 25px;
-  width: 280px;
-  margin: auto;
-  border-radius: 12px;
-  box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+  display: flex;
+  gap: 20px;
 }
 
-/* 🔹 INPUTS */
-input {
-  width: 90%;
-  padding: 10px;
-  margin: 10px 0;
-  border-radius: 6px;
-  border: 1px solid #d1d5db;
-  font-size: 14px;
-}
-
-/* 🔹 BOTONES */
 button {
-  padding: 12px 18px;
-  background: var(--verde-principal);
+  background: #2e7d32;
   color: white;
   border: none;
-  cursor: pointer;
+  padding: 12px 22px;
   border-radius: 8px;
-  font-size: 14px;
-  transition: background 0.3s;
+  cursor: pointer;
+  font-size: 15px;
 }
 
 button:hover {
-  background: #15803d;
+  background: #1b5e20;
 }
 
-/* 🔹 CATALOGO */
+input {
+  margin: 8px;
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid #c8e6c9;
+}
+
 .catalogo {
   display: flex;
-  justify-content: center;
-  gap: 25px;
-  margin-top: 30px;
-  flex-wrap: wrap;
+  gap: 20px;
 }
 
-/* 🔹 ITEM */
 .item {
-  background: var(--blanco);
-  padding: 20px;
+  background: white;
+  padding: 15px;
+  border-radius: 10px;
+  text-align: center;
   width: 180px;
-  border-radius: 15px;
-  box-shadow: 0 8px 15px rgba(0,0,0,0.1);
 }
 
-.item p {
-  margin: 8px 0;
-  font-weight: bold;
-}
-
-/* 🔹 IMAGEN */
 .item img {
-  width: 110px;
-  margin-bottom: 10px;
-}
-
-/* 🔹 ADMIN */
-#resultado {
-  margin-top: 15px;
-  color: var(--verde-principal);
-  font-weight: bold;
+  width: 120px;
 }
