@@ -2,19 +2,43 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Admin AJE COINS</title>
+  <title>Admin | AJE COINS</title>
   <link rel="stylesheet" href="styles.css">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
-<body class="center">
+<body>
 
-  <h2>Administrador</h2>
+<h1>Panel Administrador</h1>
 
-  <input type="file" id="excelFile">
-  <button onclick="procesarExcel()">Procesar Excel</button>
+<input type="file" id="excelFile" accept=".xlsx,.xls">
+<br><br>
+<button onclick="procesarExcel()">Procesar Excel</button>
 
-  <p id="resultado"></p>
+<p id="resultado"></p>
 
-  <script src="app.js"></script>
+<hr>
+
+<h2>Vista previa de la base cargada</h2>
+
+<div class="tabla-container">
+  <table id="tablaDatos">
+    <thead>
+      <tr>
+        <th>Fecha</th>
+        <th>Cédula</th>
+        <th>Vendedor</th>
+        <th>Cedis</th>
+        <th>Coins Ganados</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- aquí se llena dinámicamente -->
+    </tbody>
+  </table>
+</div>
+
+<!-- LIBRERÍA EXCEL -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<script src="app.js"></script>
 </body>
 </html>
