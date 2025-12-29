@@ -1,14 +1,21 @@
-// ================= LOGIN =================
+/***********************
+ LOGIN
+************************/
 function login() {
-  const user = document.getElementById("user").value;
-  const pass = document.getElementById("pass").value;
+  const userInput = document.getElementById("user");
+  const passInput = document.getElementById("pass");
+
+  if (!userInput || !passInput) return;
+
+  const user = userInput.value;
+  const pass = passInput.value;
   const tipo = localStorage.getItem("tipo_login");
 
   if (tipo === "admin") {
     if (user === "admin" && pass === "admin123") {
       window.location.href = "admin.html";
     } else {
-      alert("Credenciales de admin incorrectas");
+      alert("Admin incorrecto");
     }
     return;
   }
@@ -23,14 +30,17 @@ function login() {
   }
 }
 
-// ================= ADMIN =================
+/***********************
+ ADMIN – PROCESAR EXCEL
+************************/
 function procesarExcel() {
-  const file = document.getElementById("excelFile").files[0];
-  if (!file) {
+  const input = document.getElementById("excelFile");
+  if (!input || !input.files.length) {
     alert("Selecciona un Excel");
     return;
   }
 
+  const file = input.files[0];
   const reader = new FileReader();
 
   reader.onload = function (e) {
@@ -42,6 +52,8 @@ function procesarExcel() {
     let baseCoins = {};
 
     rows.forEach(r => {
+      if (!r.cedula) return;
+
       baseCoins[r.cedula] = {
         fecha: r.fecha,
         vendedor: r.vendedor,
@@ -54,25 +66,39 @@ function procesarExcel() {
     });
 
     localStorage.setItem("baseCoins", JSON.stringify(baseCoins));
-    document.getElementById("resultado").innerText = "Excel cargado correctamente";
+
+    const res = document.getElementById("resultado");
+    if (res) res.innerText = "Excel cargado correctamente ✔";
   };
 
   reader.readAsArrayBuffer(file);
 }
 
-// ================= USUARIO =================
-const usuario = localStorage.getItem("usuario_actual");
-const baseCoins = JSON.parse(localStorage.getItem("baseCoins")) || {};
-
-if (usuario && baseCoins[usuario]) {
+/***********************
+ USUARIO – MOSTRAR COINS
+************************/
+(function mostrarCoins() {
   const p = document.getElementById("coins");
-  if (p) {
-    p.innerText = "Coins actuales: " + baseCoins[usuario].coins_actuales;
-  }
-}
+  if (!p) return;
 
-// ================= CANJEAR =================
+  const usuario = localStorage.getItem("usuario_actual");
+  const baseCoins = JSON.parse(localStorage.getItem("baseCoins")) || {};
+
+  if (!usuario || !baseCoins[usuario]) {
+    p.innerText = "Usuario sin datos";
+    return;
+  }
+
+  p.innerText = "Coins actuales: " + baseCoins[usuario].coins_actuales;
+})();
+
+/***********************
+ CANJEAR
+************************/
 function canjear(valor, articulo) {
+  const usuario = localStorage.getItem("usuario_actual");
+  let baseCoins = JSON.parse(localStorage.getItem("baseCoins")) || {};
+
   if (!baseCoins[usuario]) {
     alert("Usuario no encontrado");
     return;
@@ -92,6 +118,6 @@ function canjear(valor, articulo) {
   });
 
   localStorage.setItem("baseCoins", JSON.stringify(baseCoins));
-  alert("Canje realizado con éxito");
+  alert("Canje exitoso ✔");
   location.reload();
 }
