@@ -1,16 +1,36 @@
-body{font-family:Arial,sans-serif;background:#f5fff5;color:#1b5e20;margin:0;padding:0}
-.center{text-align:center;margin-top:60px}
-h1,h2{color:#1b5e20}
-button{background:#2e7d32;color:white;border:none;padding:10px 20px;margin:10px;cursor:pointer;border-radius:5px;font-size:16px}
-button:hover{background:#1b5e20}
-button:disabled{background:#ccc;cursor:not-allowed}
-input{padding:10px;margin:5px;width:220px;font-size:14px}
-.error{color:#d32f2f;font-weight:bold}
-.success{color:#2e7d32;font-weight:bold}
-.tabla-container{margin:40px;overflow-x:auto}
-table{width:100%;border-collapse:collapse;background:white}
-th,td{border:1px solid #c8e6c9;padding:8px;text-align:center}
-th{background:#2e7d32;color:white}
-.catalogo{display:flex;gap:20px;justify-content:center;margin:20px;flex-wrap:wrap}
-.item{background:white;padding:15px;border-radius:8px;text-align:center;width:180px;box-shadow:0 2px 5px rgba(0,0,0,0.1)}
-.item img{width:100px;height:100px;object-fit:contain}
+body {
+    font-family: Arial, sans-serif;
+    background: #e6f4ee;
+    color: #1f7a4d;
+    padding: 40px;
+}
+
+.center {
+    text-align: center;
+}
+
+.btn {
+    background: #1f7a4d;
+    color: white;
+    padding: 15px 30px;
+    margin: 10px;
+    text-decoration: none;
+    border-radius: 8px;
+}
+
+input, button {
+    padding: 10px;
+    margin: 10px;
+}
+
+.card {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    max-width: 400px;
+}
+
+.logo {
+    width: 150px;
+    margin-top: 20px;
+}
