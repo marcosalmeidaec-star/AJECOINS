@@ -4,6 +4,72 @@
     <meta charset="UTF-8">
     <title>AJE Coins - Usuario</title>
     <link rel="stylesheet" href="styles.css">
+    <style>
+        /* Grid minimalista de productos */
+        #productosContainer {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 15px;
+            padding: 15px 0;
+        }
+
+        .producto-card {
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            text-align: center;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: transform 0.2s;
+        }
+
+        .producto-card:hover {
+            transform: translateY(-3px);
+        }
+
+        .producto-img {
+            width: 100%;
+            height: 100px;
+            object-fit: contain;
+            margin-bottom: 10px;
+        }
+
+        .producto-nombre {
+            font-size: 14px;
+            margin: 5px 0;
+        }
+
+        .producto-coins {
+            font-size: 12px;
+            color: #555;
+            margin-bottom: 10px;
+        }
+
+        .btn-agregar {
+            background-color: #ffd700; /* dorado minimalista */
+            border: none;
+            border-radius: 8px;
+            padding: 5px 10px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.2s;
+        }
+
+        .btn-agregar:hover {
+            background-color: #e6c200;
+        }
+
+        /* Mensaje de carrito */
+        #carrito {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            background: #fafafa;
+        }
+    </style>
 </head>
 <body>
 
@@ -34,12 +100,141 @@
             </thead>
             <tbody></tbody>
         </table>
+
+        <h3>Productos disponibles</h3>
+        <div id="productosContainer"></div>
+
+        <div id="carrito">
+            <h4>Carrito</h4>
+            <ul id="listaCarrito"></ul>
+        </div>
     </div>
 
     <br>
     <a href="index.html">⬅ Volver al inicio</a>
 </div>
 
-<script type="module" src="usuario.js"></script>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
+import { getFirestore, doc, getDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+
+// 🔹 Config Firebase
+const firebaseConfig = {
+    apiKey: "TU_API_KEY",
+    authDomain: "TU_AUTH_DOMAIN",
+    projectId: "TU_PROJECT_ID",
+    storageBucket: "TU_STORAGE_BUCKET",
+    messagingSenderId: "TU_SENDER_ID",
+    appId: "TU_APP_ID"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+// Elementos DOM
+const cedulaInput = document.getElementById("cedulaInput");
+const buscarBtn = document.getElementById("buscarBtn");
+const mensaje = document.getElementById("mensaje");
+
+const infoUsuario = document.getElementById("infoUsuario");
+const nombreSpan = document.getElementById("nombre");
+const cedisSpan = document.getElementById("cedis");
+const coinsActualesSpan = document.getElementById("coinsActuales");
+const tablaHistorialBody = document.querySelector("#tablaHistorial tbody");
+
+const productosContainer = document.getElementById("productosContainer");
+const listaCarrito = document.getElementById("listaCarrito");
+
+let carrito = [];
+
+// 🔹 Función para mostrar usuario
+async function mostrarUsuario(cedula) {
+    tablaHistorialBody.innerHTML = "";
+    productosContainer.innerHTML = "";
+    listaCarrito.innerHTML = "";
+    carrito = [];
+
+    const userRef = doc(db, "usuarios", cedula);
+    const userSnap = await getDoc(userRef);
+
+    if (!userSnap.exists()) {
+        mensaje.innerText = "❌ Usuario no encontrado.";
+        infoUsuario.style.display = "none";
+        return;
+    }
+
+    const userData = userSnap.data();
+    nombreSpan.innerText = userData.nombre;
+    cedisSpan.innerText = userData.cedis;
+
+    // 🔹 Historial de movimientos
+    const movimientosSnap = await getDocs(collection(db, "usuarios", cedula, "movimientos"));
+    let coinsActuales = 0;
+    movimientosSnap.forEach(mov => {
+        const data = mov.data();
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+            <td>${data.fecha}</td>
+            <td>${data.coins_ganados}</td>
+            <td>${data.producto}</td>
+            <td>${data.coins_canjeados}</td>
+            <td>${data.coins_actuales}</td>
+        `;
+        tablaHistorialBody.appendChild(tr);
+        coinsActuales = data.coins_actuales;
+    });
+
+    coinsActualesSpan.innerText = coinsActuales;
+    infoUsuario.style.display = "block";
+
+    // 🔹 Mostrar productos
+    const productosSnap = await getDocs(collection(db, "productos"));
+    productosSnap.forEach(docSnap => {
+        const producto = docSnap.data();
+
+        const card = document.createElement("div");
+        card.classList.add("producto-card");
+        card.innerHTML = `
+            <img src="${producto.imagen}" alt="${producto.nombre}" class="producto-img" />
+            <h3 class="producto-nombre">${producto.nombre}</h3>
+            <p class="producto-coins">${producto.coins} coins</p>
+            <button class="btn-agregar" data-id="${docSnap.id}" data-nombre="${producto.nombre}" data-coins="${producto.coins}">
+                + Agregar
+            </button>
+        `;
+
+        productosContainer.appendChild(card);
+    });
+
+    // 🔹 Botones agregar al carrito
+    productosContainer.querySelectorAll(".btn-agregar").forEach(btn => {
+        btn.addEventListener("click", () => {
+            const nombre = btn.dataset.nombre;
+            const coins = Number(btn.dataset.coins);
+
+            carrito.push({ nombre, coins });
+            actualizarCarrito();
+        });
+    });
+}
+
+// 🔹 Actualizar carrito
+function actualizarCarrito() {
+    listaCarrito.innerHTML = "";
+    carrito.forEach((item, index) => {
+        const li = document.createElement("li");
+        li.innerText = `${item.nombre} - ${item.coins} coins`;
+        listaCarrito.appendChild(li);
+    });
+}
+
+// 🔹 Buscar usuario
+buscarBtn.addEventListener("click", () => {
+    const cedula = cedulaInput.value.trim();
+    if (cedula) {
+        mostrarUsuario(cedula);
+    }
+});
+</script>
 </body>
 </html>
