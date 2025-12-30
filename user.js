@@ -1,56 +1,22 @@
-const session = JSON.parse(sessionStorage.getItem('aje_session') || '{}');
-if (!session || session.role !== 'user') {
-  alert('Debes iniciar sesión');
-  window.location.href = 'login.html';
+function login() {
+    const cedula = document.getElementById("cedula").value;
+    localStorage.setItem("cedula_actual", cedula);
+    window.location.href = "dashboard.html";
 }
 
-const CATALOGO = [
-  {id: 1, nombre: 'Taza', precio: 500, img: 'catalogo/taza.png'},
-  {id: 2, nombre: 'Gorra', precio: 700, img: 'catalogo/gorra.png'},
-  {id: 3, nombre: 'Mochila', precio: 1200, img: 'catalogo/mochila.png'}
-];
+if (window.location.pathname.includes("dashboard.html")) {
+    const cedula = localStorage.getItem("cedula_actual");
+    const data = JSON.parse(localStorage.getItem("ajecoins_data")) || [];
 
-const loadData = () => {
-  const allCoins = JSON.parse(localStorage.getItem('aje_baseCoins') || '{}');
-  return allCoins[session.cedula];
-};
+    const user = data.find(u => u.cedula === cedula);
 
-const renderCatalogo = (disponibles) => {
-  document.querySelector('.catalogo').innerHTML = CATALOGO.map(item => `
-    <div class="item">
-      <img src="${item.img}" alt="${item.nombre}">
-      <h3>${item.nombre}</h3>
-      <p>${item.precio} Coins</p>
-      <button onclick="canjear(${item.precio}, '${item.nombre}')" ${disponibles < item.precio ? 'disabled' : ''}>
-        ${disponibles < item.precio ? 'Insuficiente' : 'Canjear'}
-      </button>
-    </div>
-  `).join('');
-};
-
-const updateDisplay = () => {
-  const userData = loadData();
-  if (!userData) {
-    document.getElementById('coins').innerHTML = '<span class="error">Error al cargar datos</span>';
-    return;
-  }
-  document.getElementById('coins').textContent = `Tienes ${userData.coins_actuales} AJE COINS`;
-  renderCatalogo(userData.coins_actuales);
-};
-
-window.canjear = (precio, nombre) => {
-  const allCoins = JSON.parse(localStorage.getItem('aje_baseCoins') || '{}');
-  const userData = allCoins[session.cedula];
-  
-  if (!userData || userData.coins_actuales < precio) return alert('❌ Coins insuficientes');
-  
-  userData.coins_usados += precio;
-  userData.coins_actuales -= precio;
-  allCoins[session.cedula] = userData;
-  
-  localStorage.setItem('aje_baseCoins', JSON.stringify(allCoins));
-  alert(`✅ Canjeaste ${nombre} por ${precio} coins!`);
-  updateDisplay();
-};
-
-updateDisplay();
+    if (!user) {
+        alert("Usuario no encontrado");
+        window.location.href = "usuario.html";
+    } else {
+        document.getElementById("nombre").innerText = user.nombre;
+        document.getElementById("cedula").innerText = user.cedula;
+        document.getElementById("cedis").innerText = user.cedis;
+        document.getElementById("coins").innerText = user.coins;
+    }
+}
