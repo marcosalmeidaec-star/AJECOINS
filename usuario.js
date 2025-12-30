@@ -1,10 +1,17 @@
 function login() {
-    const cedula = document.getElementById("cedula").value;
+    const cedula = document.getElementById("cedula").value.trim();
+
+    if (cedula === "") {
+        alert("Ingresa tu cédula");
+        return;
+    }
+
     localStorage.setItem("cedula_actual", cedula);
     window.location.href = "dashboard.html";
 }
 
 if (window.location.pathname.includes("dashboard.html")) {
+
     const cedula = localStorage.getItem("cedula_actual");
     const data = JSON.parse(localStorage.getItem("ajecoins_data")) || [];
 
