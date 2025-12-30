@@ -2,7 +2,9 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebas
 import {
     getFirestore,
     doc,
-    setDoc
+    setDoc,
+    collection,
+    getDocs
 } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
 
 // 🔹 Config Firebase
@@ -19,7 +21,57 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 const tablaBody = document.querySelector("#tablaDatos tbody");
+const status = document.getElementById("status");
 
+
+// ===================================================
+// 🔹 1. CARGAR DATOS EXISTENTES AL ENTRAR AL ADMIN
+// ===================================================
+async function cargarDatosExistentes() {
+    tablaBody.innerHTML = "";
+    status.innerText = "⏳ Cargando datos existentes...";
+
+    const usuariosSnap = await getDocs(collection(db, "usuarios"));
+
+    let total = 0;
+
+    for (const userDoc of usuariosSnap.docs) {
+        const userData = userDoc.data();
+        const cedula = userDoc.id;
+
+        const movimientosSnap = await getDocs(
+            collection(db, "usuarios", cedula, "movimientos")
+        );
+
+        movimientosSnap.forEach(mov => {
+            const data = mov.data();
+
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td>${data.fecha}</td>
+                <td>${cedula}</td>
+                <td>${userData.nombre}</td>
+                <td>${userData.cedis}</td>
+                <td>${data.coins_ganados}</td>
+            `;
+            tablaBody.appendChild(tr);
+            total++;
+        });
+    }
+
+    status.innerText =
+        total > 0
+            ? `📦 Registros cargados desde Firebase: ${total}`
+            : "ℹ️ No hay datos cargados aún";
+}
+
+// 🔹 Ejecutar automáticamente
+cargarDatosExistentes();
+
+
+// ===================================================
+// 🔹 2. CARGA DE CSV (ADMIN)
+// ===================================================
 document.getElementById("fileInput").addEventListener("change", function (e) {
     const file = e.target.files[0];
     if (!file) return;
@@ -48,14 +100,14 @@ document.getElementById("fileInput").addEventListener("change", function (e) {
 
             if (!cedula || isNaN(coins)) continue;
 
-            // 🔹 1. Documento usuario (datos fijos)
+            // 🔹 Usuario (datos fijos)
             await setDoc(
                 doc(db, "usuarios", cedula),
                 { cedula, nombre, cedis },
                 { merge: true }
             );
 
-            // 🔹 2. Movimiento POR FECHA (sobrescribe)
+            // 🔹 Movimiento POR FECHA (sobrescribe)
             await setDoc(
                 doc(db, "usuarios", cedula, "movimientos", fechaId),
                 {
@@ -67,7 +119,7 @@ document.getElementById("fileInput").addEventListener("change", function (e) {
                 }
             );
 
-            // 🔹 3. Mostrar en tabla
+            // 🔹 Mostrar en tabla
             const tr = document.createElement("tr");
             tr.innerHTML = `
                 <td>${fechaRaw}</td>
@@ -81,7 +133,7 @@ document.getElementById("fileInput").addEventListener("change", function (e) {
             contador++;
         }
 
-        document.getElementById("status").innerText =
+        status.innerText =
             `✅ Archivo cargado. Registros procesados: ${contador}`;
     };
 
