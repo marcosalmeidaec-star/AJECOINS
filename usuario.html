@@ -147,94 +147,101 @@ const listaCarrito = document.getElementById("listaCarrito");
 
 let carrito = [];
 
-// 🔹 Función para mostrar usuario
-async function mostrarUsuario(cedula) {
-    tablaHistorialBody.innerHTML = "";
-    productosContainer.innerHTML = "";
-    listaCarrito.innerHTML = "";
-    carrito = [];
-
-    const userRef = doc(db, "usuarios", cedula);
-    const userSnap = await getDoc(userRef);
-
-    if (!userSnap.exists()) {
-        mensaje.innerText = "❌ Usuario no encontrado.";
-        infoUsuario.style.display = "none";
-        return;
-    }
-
-    const userData = userSnap.data();
-    nombreSpan.innerText = userData.nombre;
-    cedisSpan.innerText = userData.cedis;
-
-    // 🔹 Historial de movimientos
-    const movimientosSnap = await getDocs(collection(db, "usuarios", cedula, "movimientos"));
-    let coinsActuales = 0;
-    movimientosSnap.forEach(mov => {
-        const data = mov.data();
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-            <td>${data.fecha}</td>
-            <td>${data.coins_ganados}</td>
-            <td>${data.producto}</td>
-            <td>${data.coins_canjeados}</td>
-            <td>${data.coins_actuales}</td>
-        `;
-        tablaHistorialBody.appendChild(tr);
-        coinsActuales = data.coins_actuales;
-    });
-
-    coinsActualesSpan.innerText = coinsActuales;
-    infoUsuario.style.display = "block";
-
-    // 🔹 Mostrar productos
-    const productosSnap = await getDocs(collection(db, "productos"));
-    productosSnap.forEach(docSnap => {
-        const producto = docSnap.data();
-
-        const card = document.createElement("div");
-        card.classList.add("producto-card");
-        card.innerHTML = `
-            <img src="${producto.imagen}" alt="${producto.nombre}" class="producto-img" />
-            <h3 class="producto-nombre">${producto.nombre}</h3>
-            <p class="producto-coins">${producto.coins} coins</p>
-            <button class="btn-agregar" data-id="${docSnap.id}" data-nombre="${producto.nombre}" data-coins="${producto.coins}">
-                + Agregar
-            </button>
-        `;
-
-        productosContainer.appendChild(card);
-    });
-
-    // 🔹 Botones agregar al carrito
-    productosContainer.querySelectorAll(".btn-agregar").forEach(btn => {
-        btn.addEventListener("click", () => {
-            const nombre = btn.dataset.nombre;
-            const coins = Number(btn.dataset.coins);
-
-            carrito.push({ nombre, coins });
-            actualizarCarrito();
-        });
-    });
-}
-
-// 🔹 Actualizar carrito
+// 🔹 Función para actualizar carrito
 function actualizarCarrito() {
     listaCarrito.innerHTML = "";
-    carrito.forEach((item, index) => {
+    carrito.forEach(item => {
         const li = document.createElement("li");
         li.innerText = `${item.nombre} - ${item.coins} coins`;
         listaCarrito.appendChild(li);
     });
 }
 
-// 🔹 Buscar usuario
+// 🔹 Función para mostrar usuario y productos
+async function mostrarUsuario(cedula) {
+    infoUsuario.style.display = "none";
+    mensaje.innerText = "⏳ Cargando usuario...";
+    tablaHistorialBody.innerHTML = "";
+    productosContainer.innerHTML = "";
+    listaCarrito.innerHTML = "";
+    carrito = [];
+
+    try {
+        const userRef = doc(db, "usuarios", cedula);
+        const userSnap = await getDoc(userRef);
+
+        if (!userSnap.exists()) {
+            mensaje.innerText = "❌ Usuario no encontrado.";
+            return;
+        }
+
+        const userData = userSnap.data();
+        nombreSpan.innerText = userData.nombre;
+        cedisSpan.innerText = userData.cedis;
+
+        // 🔹 Historial de movimientos
+        const movimientosSnap = await getDocs(collection(db, "usuarios", cedula, "movimientos"));
+        let coinsActuales = 0;
+
+        if (!movimientosSnap.empty) {
+            movimientosSnap.forEach(mov => {
+                const data = mov.data();
+                const tr = document.createElement("tr");
+                tr.innerHTML = `
+                    <td>${data.fecha}</td>
+                    <td>${data.coins_ganados}</td>
+                    <td>${data.producto || ""}</td>
+                    <td>${data.coins_canjeados}</td>
+                    <td>${data.coins_actuales}</td>
+                `;
+                tablaHistorialBody.appendChild(tr);
+                coinsActuales = data.coins_actuales;
+            });
+        }
+
+        coinsActualesSpan.innerText = coinsActuales;
+        infoUsuario.style.display = "block";
+        mensaje.innerText = "";
+
+        // 🔹 Mostrar productos
+        const productosSnap = await getDocs(collection(db, "productos"));
+        productosSnap.forEach(docSnap => {
+            const producto = docSnap.data();
+            const card = document.createElement("div");
+            card.classList.add("producto-card");
+            card.innerHTML = `
+                <img src="${producto.imagen}" alt="${producto.nombre}" class="producto-img" />
+                <h3 class="producto-nombre">${producto.nombre}</h3>
+                <p class="producto-coins">${producto.coins} coins</p>
+                <button class="btn-agregar" data-id="${docSnap.id}" data-nombre="${producto.nombre}" data-coins="${producto.coins}">
+                    + Agregar
+                </button>
+            `;
+            productosContainer.appendChild(card);
+        });
+
+        // 🔹 Botones agregar al carrito
+        productosContainer.querySelectorAll(".btn-agregar").forEach(btn => {
+            btn.addEventListener("click", () => {
+                const nombre = btn.dataset.nombre;
+                const coins = Number(btn.dataset.coins);
+                carrito.push({ nombre, coins });
+                actualizarCarrito();
+            });
+        });
+
+    } catch (error) {
+        console.error(error);
+        mensaje.innerText = "❌ Error al cargar usuario.";
+    }
+}
+
+// 🔹 Event listener buscar
 buscarBtn.addEventListener("click", () => {
     const cedula = cedulaInput.value.trim();
-    if (cedula) {
-        mostrarUsuario(cedula);
-    }
+    if (cedula) mostrarUsuario(cedula);
 });
 </script>
 </body>
 </html>
+
