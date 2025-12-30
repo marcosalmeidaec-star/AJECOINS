@@ -1,31 +1,43 @@
-function loginUsuario() {
-    const cedula = document.getElementById("cedulaInput").value.trim();
-    const error = document.getElementById("error");
+document.getElementById("btnConsultar").addEventListener("click", function () {
+    const cedulaIngresada = document.getElementById("cedulaInput").value.trim();
+    const resultado = document.getElementById("resultado");
 
-    if (cedula === "") {
-        error.textContent = "Ingrese su número de cédula";
+    if (cedulaIngresada === "") {
+        resultado.innerHTML = "⚠️ Ingresa una cédula";
         return;
     }
 
-    // Obtener datos guardados por el admin
-    const data = JSON.parse(localStorage.getItem("aje_coins_data"));
+    const dataGuardada = localStorage.getItem("aje_coins_data");
 
-    if (!data || data.length === 0) {
-        error.textContent = "No hay datos cargados aún";
+    if (!dataGuardada) {
+        resultado.innerHTML = "❌ No hay datos cargados por el administrador";
         return;
     }
 
-    // Buscar usuario por cédula
-    const usuario = data.find(u => u.cedula === cedula);
+    const registros = JSON.parse(dataGuardada);
 
-    if (!usuario) {
-        error.textContent = "Cédula no encontrada";
+    // Filtrar registros por cédula
+    const registrosUsuario = registros.filter(
+        r => r.cedula === cedulaIngresada
+    );
+
+    if (registrosUsuario.length === 0) {
+        resultado.innerHTML = "❌ No se encontraron registros para esta cédula";
         return;
     }
 
-    // Guardar usuario logueado
-    localStorage.setItem("aje_usuario_actual", JSON.stringify(usuario));
+    // Sumar coins
+    let totalCoins = 0;
+    registrosUsuario.forEach(r => {
+        totalCoins += Number(r.coins);
+    });
 
-    // Ir al dashboard
-    window.location.href = "dashboard.html";
-}
+    const user = registrosUsuario[0];
+
+    resultado.innerHTML = `
+        <h3>👤 ${user.nombre}</h3>
+        <p><strong>Cédula:</strong> ${user.cedula}</p>
+        <p><strong>CEDIS:</strong> ${user.cedis}</p>
+        <p><strong>Total Coins:</strong> ${totalCoins}</p>
+    `;
+});
