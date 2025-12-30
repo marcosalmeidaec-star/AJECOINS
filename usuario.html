@@ -152,6 +152,7 @@ function actualizarCarrito() {
                 if (totalCarritoActual + carrito[idx].coins > coinsUsuario) {
                     alertaCoins.innerText = "❌ Usuario excedió el monto de coins actuales";
                     alertaCoins.style.display = "block";
+                    setTimeout(()=> alertaCoins.style.display="none",3000);
                     return;
                 }
                 alertaCoins.style.display = "none";
@@ -165,6 +166,11 @@ function actualizarCarrito() {
             actualizarCarrito();
         });
     });
+
+    // Auto ocultar alertas
+    if (alertaCoins.style.display === "block") {
+        setTimeout(()=> alertaCoins.style.display="none",3000);
+    }
 }
 
 // Mostrar usuario y productos
@@ -190,7 +196,7 @@ async function mostrarUsuario(cedula) {
         nombreSpan.innerText = userData.nombre || "Sin nombre";
         cedisSpan.innerText = userData.cedis || "Sin CEDIS";
 
-        coinsUsuario = userData.coins_actuales || 0;
+        coinsUsuario = userData.coins_actuales ?? 0; // ✅ lectura correcta de coins
         coinsActualesSpan.innerText = coinsUsuario;
 
         const movimientosSnap = await getDocs(collection(db, "usuarios", cedula, "movimientos"));
@@ -237,6 +243,7 @@ async function mostrarUsuario(cedula) {
                 if (coins + totalCarrito > coinsUsuario) {
                     alertaCoins.innerText = "❌ Usuario excedió el monto de coins actuales";
                     alertaCoins.style.display = "block";
+                    setTimeout(()=> alertaCoins.style.display="none",3000);
                     return;
                 }
 
@@ -264,6 +271,7 @@ btnSolicitar.addEventListener("click", async () => {
     if (carrito.length === 0) {
         alertaCoins.innerText = "❌ No hay productos en el carrito";
         alertaCoins.style.display = "block";
+        setTimeout(()=> alertaCoins.style.display="none",3000);
         return;
     }
 
@@ -283,7 +291,6 @@ btnSolicitar.addEventListener("click", async () => {
             };
             await setDoc(movimientoRef, dataMovimiento);
 
-            // Agregar fila directamente a la tabla sin recargar
             const tr = document.createElement("tr");
             tr.innerHTML = `
                 <td>${fecha}</td>
@@ -295,7 +302,6 @@ btnSolicitar.addEventListener("click", async () => {
             tablaHistorialBody.appendChild(tr);
         }
 
-        // Actualizar coins del usuario en Firebase
         await setDoc(doc(db, "usuarios", cedula), { coins_actuales: coinsUsuario - totalCarrito }, { merge: true });
         coinsUsuario -= totalCarrito;
 
@@ -303,11 +309,13 @@ btnSolicitar.addEventListener("click", async () => {
         actualizarCarrito();
         alertaCoins.innerText = "✅ Productos solicitados correctamente";
         alertaCoins.style.display = "block";
+        setTimeout(()=> alertaCoins.style.display="none",3000);
 
     } catch (err) {
         console.error(err);
         alertaCoins.innerText = "❌ Error al solicitar productos";
         alertaCoins.style.display = "block";
+        setTimeout(()=> alertaCoins.style.display="none",3000);
     }
 });
 
