@@ -60,6 +60,15 @@ async function buscarUsuario() {
 function mostrarDatos(u) {
   loginCard.classList.add('hidden');
   cuentaCard.classList.remove('hidden');
+
+  // ---------- PINTAR DATOS ----------
+  datosUl.innerHTML = `
+    <li><strong>Fecha:</strong> ${u.fecha}</li>
+    <li><strong>Cédula:</strong> ${u.cedula}</li>
+    <li><strong>Nombre:</strong> ${u.nombre}</li>
+    <li><strong>Cedis:</strong> ${u.cedis}</li>
+  `;
+
   coinsUsuario = u.coins_ganados;
   coinsP.textContent = `Mis coins: ${coinsUsuario}`;
   cargarProductos();
