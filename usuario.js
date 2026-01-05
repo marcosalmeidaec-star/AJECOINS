@@ -28,6 +28,13 @@ const cerrarBtn   = document.getElementById('cerrarBtn');
 const datosUl     = document.getElementById('datos');
 const coinsP      = document.getElementById('coins');
 const errorMsg    = document.getElementById('errorMsg');
+const tiendaDiv   = document.getElementById('productosTienda');
+const carritoList = document.getElementById('carritoList');
+const bolsaSpan   = document.getElementById('bolsa');
+
+// ---------- VARIABLES ----------
+let coinsUsuario = 0;
+let carrito = [];
 
 // ---------- EVENTOS ----------
 ingresarBtn.addEventListener('click', buscarUsuario);
@@ -46,7 +53,6 @@ async function buscarUsuario() {
     return;
   }
 
-  // mostramos el primer (y único) documento
   const user = snap.docs[0].data();
   mostrarDatos(user);
 }
@@ -54,12 +60,39 @@ async function buscarUsuario() {
 function mostrarDatos(u) {
   loginCard.classList.add('hidden');
   cuentaCard.classList.remove('hidden');
+  coinsUsuario = u.coins_ganados;
+  coinsP.textContent = `Mis coins: ${coinsUsuario}`;
+  cargarProductos();
+}
 
-  datosUl.innerHTML = `
-    <li><strong>Fecha:</strong> ${u.fecha}</li>
-    <li><strong>Cédula:</strong> ${u.cedula}</li>
-    <li><strong>Nombre:</strong> ${u.nombre}</li>
-    <li><strong>Cedis:</strong> ${u.cedis}</li>
-  `;
-  coinsP.textContent = `Coins ganados: ${u.coins_ganados}`;
+async function cargarProductos() {
+  const snap = await getDocs(collection(db, 'productos'));
+  tiendaDiv.innerHTML = '';
+  snap.forEach(doc => {
+    const p = doc.data();
+    const tarj = document.createElement('div');
+    tarj.className = 'tarjeta';
+    tarj.innerHTML = `
+      <img src="assets/productos/${p.producto}.png" onerror="this.src='assets/productos/${p.producto}.jpg'">
+      <h4>${p.producto}</h4>
+      <div class="precio">${p.coins} coins</div>
+      <button onclick="agregarAlCarrito('${p.producto}', ${p.coins})">Agregar</button>`;
+    tiendaDiv.appendChild(tarj);
+  });
+}
+
+function agregarAlCarrito(nombre, precio) {
+  if (coinsUsuario < precio) return alert('No tienes coins suficientes');
+  carrito.push({nombre, precio});
+  actualizarCarrito();
+}
+
+function actualizarCarrito() {
+  carritoList.innerHTML = '';
+  let total = 0;
+  carrito.forEach(item => {
+    total += item.precio;
+    carritoList.innerHTML += `<li>${item.nombre} <span>${item.precio} c</span></li>`;
+  });
+  bolsaSpan.textContent = `${carrito.length} · ${total} c`;
 }
