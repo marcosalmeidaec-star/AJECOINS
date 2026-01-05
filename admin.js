@@ -1,11 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
 import {
-  getFirestore,
-  collection,
-  addDoc,
-  getDocs,
-  setDoc,
-  doc
+  getFirestore, collection, addDoc, getDocs, setDoc, doc, deleteDoc
 } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -20,47 +15,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// ----------- CARGAR PRODUCTOS -----------
-const productFileInput = document.getElementById("productFileInput");
-const uploadProductBtn = document.getElementById("uploadProductBtn");
-const productsBody = document.querySelector("#productsTable tbody");
-
-uploadProductBtn.addEventListener("click", async () => {
-  const file = productFileInput.files[0];
-  if (!file) return alert("Selecciona el CSV de productos");
-  const text = await file.text();
-  const lines = text.trim().split("\n");
-  let first = true;
-  for (const line of lines) {
-    if (first) { first = false; continue; } // salta encabezado
-    const clean = line.trim().replace(/"/g, "");
-    if (!clean) continue;
-    const [nombre, coins] = clean.split(/\s*;\s*/); // ← separador ;
-    const prod = nombre.trim();
-    await setDoc(doc(db, "productos", prod), {
-      producto: prod,
-      coins: parseInt(coins.trim(), 10)
-    });
-  }
-  alert("Productos cargados");
-  loadProducts();
-});
-
-async function loadProducts() {
-  productsBody.innerHTML = "";
-  const snap = await getDocs(collection(db, "productos"));
-  snap.forEach(d => {
-    const p = d.data();
-    productsBody.innerHTML += `
-      <tr>
-        <td>${p.producto}</td>
-        <td><img src="assets/productos/${p.producto}.png" alt="${p.producto}" onerror="this.src='assets/productos/${p.producto}.jpg'"/></td>
-        <td>${p.coins}</td>
-      </tr>`;
-  });
-}
-
-// ----------- CARGAR USUARIOS -----------
+// ----------- USUARIOS -----------
 const fileInput = document.getElementById("fileInput");
 const uploadBtn = document.getElementById("uploadBtn");
 const usersBody = document.querySelector("#usersTable tbody");
@@ -100,6 +55,69 @@ async function loadUsers() {
   });
 }
 
-// ----------- INICIAL --------
+// ----------- PRODUCTOS -----------
+const productFileInput = document.getElementById("productFileInput");
+const uploadProductBtn = document.getElementById("uploadProductBtn");
+const productsBody = document.querySelector("#productsTable tbody");
+
+uploadProductBtn.addEventListener("click", async () => {
+  const file = productFileInput.files[0];
+  if (!file) return alert("Selecciona el CSV de productos");
+  const text = await file.text();
+  const lines = text.trim().split("\n");
+  let first = true;
+  for (const line of lines) {
+    if (first) { first = false; continue; }
+    const clean = line.trim().replace(/"/g, "");
+    if (!clean) continue;
+    const [nombre, coins] = clean.split(/\s*;\s*/);
+    const prod = nombre.trim();
+    await setDoc(doc(db, "productos", prod), {
+      producto: prod,
+      coins: parseInt(coins.trim(), 10)
+    });
+  }
+  alert("Productos cargados");
+  loadProducts();
+});
+
+async function loadProducts() {
+  productsBody.innerHTML = "";
+  const snap = await getDocs(collection(db, "productos"));
+  snap.forEach(d => {
+    const p = d.data();
+    productsBody.innerHTML += `
+      <tr>
+        <td>${p.producto}</td>
+        <td><img src="assets/productos/${p.producto}.png" alt="${p.producto}" width="80" onerror="this.src='assets/productos/${p.producto}.jpg'"/></td>
+        <td>${p.coins}</td>
+      </tr>`;
+  });
+}
+
+// ----------- HISTORIAL ----------
+const comprasBody = document.querySelector('#comprasTable tbody');
+
+async function loadCompras(){
+  comprasBody.innerHTML = '';
+  const snap = await getDocs(collection(db, 'compras'));
+  snap.forEach(d=>{
+    const c = d.data();
+    const fecha = c.fecha?.toDate().toLocaleString('es-EC') || '-';
+    const productos = c.items.map(i=>i.nombre).join(', ');
+    comprasBody.innerHTML += `
+      <tr>
+        <td>${fecha}</td>
+        <td>${c.cedula}</td>
+        <td>${c.nombre}</td>
+        <td>${c.cedis}</td>
+        <td>${productos}</td>
+        <td>${c.total}</td>
+      </tr>`;
+  });
+}
+
+// ---------- INICIAL ----------
 loadProducts();
 loadUsers();
+loadCompras();
