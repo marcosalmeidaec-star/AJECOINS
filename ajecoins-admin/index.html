@@ -5,10 +5,10 @@
   <title>AjeCoins Admin</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <!-- TailwindCSS CDN -->
+  <!-- TailwindCSS -->
   <script src="https://cdn.tailwindcss.com"></script>
 
-  <!-- React y ReactDOM CDN -->
+  <!-- React + ReactDOM -->
   <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
 
@@ -21,7 +21,7 @@
   <!-- Firebase -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
-    import { getFirestore, collection, getDocs, setDoc, doc } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+    import { getFirestore } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCsz2EP8IsTlG02uU2_GRfyQeeajMDuJjI",
@@ -40,7 +40,7 @@
 <body class="bg-green-50">
   <div id="root"></div>
 
-  <!-- Código React + Firebase -->
+  <!-- Admin JS -->
   <script type="module" src="admin.js"></script>
 </body>
 </html>
