@@ -3,55 +3,61 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AjeCoins - Usuario</title>
+  <title>AjeCoins – Dashboard</title>
   <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body class="dashboard">
 
-  <h1>AjeCoins - Usuario</h1>
+  <header class="topbar">
+    <h1>AjeCoins</h1>
+    <div id="userCoinsTop" class="coins-top">💎 0</div>
+  </header>
 
-  <!-- 🔐 Login con cédula -->
-  <section id="login">
-    <label>Ingresa tu cédula:</label>
-    <input type="text" id="cedulaInput" placeholder="12345678">
-    <button onclick="login()">Ingresar</button>
-  </section>
+  <main class="container">
 
-  <!-- 👤 Info del usuario -->
-  <section id="userInfo" style="display:none;">
-    <h2>Bienvenido, <span id="userNombre"></span></h2>
-    <p><strong>Cédula:</strong> <span id="userCedula"></span></p>
-    <p><strong>CEDIS:</strong> <span id="userCedis"></span></p>
-    <p><strong>Coins disponibles:</strong> <span id="userCoins">0</span></p>
-  </section>
+    <!-- 🔐 Login -->
+    <section id="login" class="card">
+      <h2>Acceso ejecutivo</h2>
+      <input id="cedulaInput" type="text" placeholder="Cédula" maxlength="10">
+      <button onclick="login()" class="primary">Ingresar</button>
+    </section>
 
-  <!-- 🛍️ Productos -->
-  <section id="productos" style="display:none;">
-    <h2>Productos disponibles</h2>
-    <div id="productosList"></div>
-  </section>
+    <!-- 👤 Info -->
+    <section id="userInfo" class="card hidden">
+      <h2 id="userNombre"></h2>
+      <p><span id="userCedula"></span> · <span id="userCedis"></span></p>
+      <div class="coins-card">💎 <span id="userCoins">0</span> coins</div>
+    </section>
 
-  <!-- 🛒 Carrito -->
-  <section id="carrito" style="display:none;">
-    <h2>Carrito</h2>
-    <ul id="carritoList"></ul>
-    <button onclick="solicitarProductos()">Solicitar productos</button>
-  </section>
+    <!-- 🛍️ Productos -->
+    <section id="productos" class="hidden">
+      <h3>Catálogo de productos</h3>
+      <div id="productosList" class="grid"></div>
+    </section>
 
-  <!-- 📦 Historial -->
-  <section id="historial" style="display:none;">
-    <h2>Historial de solicitudes</h2>
-    <table>
-      <thead>
-        <tr>
-          <th>Fecha</th>
-          <th>Productos</th>
-          <th>Coins gastados</th>
-        </tr>
-      </thead>
-      <tbody id="historialBody"></tbody>
-    </table>
-  </section>
+    <!-- 🛒 Carrito -->
+    <section id="carrito" class="card hidden">
+      <h3>Carrito de solicitudes</h3>
+      <ul id="carritoList"></ul>
+      <button onclick="solicitarProductos()" class="primary">Solicinar productos</button>
+    </section>
+
+    <!-- 📦 Historial -->
+    <section id="historial" class="hidden">
+      <h3>Historial de solicitudes</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Productos</th>
+            <th>Coins</th>
+          </tr>
+        </thead>
+        <tbody id="historialBody"></tbody>
+      </table>
+    </section>
+
+  </main>
 
   <script type="module" src="usuario.js"></script>
 </body>
