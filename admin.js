@@ -35,8 +35,8 @@ uploadProductBtn.addEventListener("click", async () => {
     if (first) { first = false; continue; } // salta encabezado
     const clean = line.trim().replace(/"/g, "");
     if (!clean) continue;
-    const [producto, coins] = clean.split(",");
-    const prod = producto.trim();
+    const [nombre, coins] = clean.split(/\s*,\s*/); // ← columna "nombre"
+    const prod = nombre.trim();
     await setDoc(doc(db, "productos", prod), {
       producto: prod,
       coins: parseInt(coins.trim(), 10)
