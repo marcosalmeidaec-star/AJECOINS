@@ -29,17 +29,18 @@ async function cargarUsuarios() {
   });
 }
 
-// 🔹 Cargar productos
+// 🔹 Cargar productos existentes
 async function cargarProductos() {
-  tablaProductosBody.innerHTML = "";
-  const snap = await getDocs(collection(db,"productos"));
-  snap.forEach(docu => {
-    const d = docu.data();
-    const tr = document.createElement("tr");
-    tr.innerHTML = `<td>${d.nombre}</td><td>${d.coins}</td><td><img src="${d.imagen}" width="50"></td>`;
-    tablaProductosBody.appendChild(tr);
-  });
-  productosStatus.innerText = `🛒 Productos cargados: ${snap.size}`;
+    tablaProductosBody.innerHTML = "";
+    const snap = await getDocs(collection(db, "productos"));
+    snap.forEach(docu => {
+        const d = docu.data();
+        const imgSrc = d.imagen || 'assets/productos/placeholder.png';
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td>${d.nombre}</td><td>${d.coins}</td><td><img src="${imgSrc}" width="50"></td>`;
+        tablaProductosBody.appendChild(tr);
+    });
+    productosStatus.innerText = `🛒 Productos cargados: ${snap.size}`;
 }
 
 // 🔹 Cargar canjes globales
@@ -83,10 +84,10 @@ btnSubirCoins.addEventListener("click", async () => {
       const fechaId = r.fecha.replace(/\//g,"-");
       const movRef = doc(db,"usuarios",r.cedula,"movimientos",fechaId);
 
-      // 1️⃣ Guardar usuario (merge)
+      // Guardar usuario (merge)
       await setDoc(userRef,{cedula:r.cedula,nombre:r.nombre,cedis:r.cedis},{merge:true});
 
-      // 2️⃣ Guardar movimiento (sobrescribe si existe)
+      // Guardar movimiento (sobrescribe si existe)
       await setDoc(movRef,{
         fecha:r.fecha,
         coins_ganados:r.coins_ganados,
@@ -96,12 +97,13 @@ btnSubirCoins.addEventListener("click", async () => {
         tipo:"ganado"
       },{merge:true});
 
-      // 3️⃣ Actualizar coins actuales
+      // Actualizar coins actuales del usuario
       await setDoc(userRef,{coins_actuales:r.coins_ganados},{merge:true});
     }));
 
     estadoSubida.innerText = `✅ Archivo procesado: ${registros.length} registros`;
-    // 🔹 refrescar tablas
+
+    // 🔹 Refrescar tablas
     await cargarUsuarios();
     await cargarCanjes();
   };
@@ -109,33 +111,35 @@ btnSubirCoins.addEventListener("click", async () => {
 });
 
 // --------------------------
-// 🔹 SUBIR CSV DE PRODUCTOS
+// 🔹 SUBIR CSV DE PRODUCTOS (productos, coins)
 // --------------------------
 productosInput?.addEventListener("change", async e => {
-  const file = e.target.files[0];
-  if(!file) return;
+    const file = e.target.files[0];
+    if(!file) return;
 
-  tablaProductosBody.innerHTML = "";
-  const reader = new FileReader();
-  reader.onload = async ev => {
-    const lines = ev.target.result.split(/\r?\n/).filter(l=>l.trim()!=="");
-    const registros = [];
+    tablaProductosBody.innerHTML = "";
+    const reader = new FileReader();
+    reader.onload = async ev => {
+        const lines = ev.target.result.split(/\r?\n/).filter(l=>l.trim()!=="");
+        const registros = [];
 
-    for(let i=1;i<lines.length;i++){
-      const cols = lines[i].includes(";") ? lines[i].split(";") : lines[i].split(",");
-      if(cols.length < 2) continue;
-      const nombre = cols[0].trim();
-      const coins = Number(cols[1]);
-      if(!nombre || isNaN(coins)) continue;
-      const id = nombre.toLowerCase().replace(/\s+/g,"_");
-      const imagen = `assets/productos/${id}.png`;
-      registros.push({id,nombre,coins,imagen});
-    }
+        for(let i=1;i<lines.length;i++){
+            const cols = lines[i].includes(";") ? lines[i].split(";") : lines[i].split(",");
+            if(cols.length < 2) continue;
+            const nombre = cols[0].trim();
+            const coins = Number(cols[1]);
+            if(!nombre || isNaN(coins)) continue;
 
-    await Promise.all(registros.map(r => setDoc(doc(db,"productos",r.id),r,{merge:true})));
-    cargarProductos();
-  };
-  reader.readAsText(file);
+            const id = nombre.toLowerCase().replace(/\s+/g,"_");
+            const imagen = `assets/productos/placeholder.png`;
+            registros.push({id,nombre,coins,imagen});
+        }
+
+        await Promise.all(registros.map(r => setDoc(doc(db,"productos",r.id),r,{merge:true})));
+        cargarProductos();
+        productosStatus.innerText = `🛒 Productos cargados: ${registros.length}`;
+    };
+    reader.readAsText(file);
 });
 
 // --------------------------
