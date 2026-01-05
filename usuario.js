@@ -27,17 +27,17 @@ const errorMsg    = document.getElementById('errorMsg');
 const tiendaDiv   = document.getElementById('productosTienda');
 const carritoList = document.getElementById('carritoList');
 const bolsaSpan   = document.getElementById('bolsa');
+const historialList = document.getElementById('historialList');
 
 // ---------- VARIABLES ----------
 let coinsUsuario = 0;
 let carrito = [];
 let userId = '';
+let userCed = '';
 
 // ---------- EVENTOS ----------
 ingresarBtn.addEventListener('click', buscarUsuario);
 cerrarBtn.addEventListener('click', () => location.reload());
-
-// **BOTONES DEL MODAL**
 document.getElementById('btnConfirmar').addEventListener('click', confirmarCompra);
 document.getElementById('btnCancelar').addEventListener('click', cerrarModal);
 
@@ -56,8 +56,10 @@ async function buscarUsuario() {
 
   const docSnap = snap.docs[0];
   userId = docSnap.id;
+  userCed = ced;
   const user = docSnap.data();
   mostrarDatos(user);
+  cargarHistorial();
 }
 
 function mostrarDatos(u) {
@@ -72,7 +74,7 @@ function mostrarDatos(u) {
   `;
 
   coinsUsuario = u.coins_ganados;
-  coinsP.textContent = `Mis coins: ${coinsUsuario}`;
+  coinsP.textContent = coinsUsuario;
   cargarProductos();
 }
 
@@ -82,33 +84,44 @@ async function cargarProductos() {
   tiendaDiv.innerHTML = '';
   snap.forEach(doc => {
     const p = doc.data();
-
-    // tarjeta
     const tarj = document.createElement('div');
     tarj.className = 'tarjeta';
 
-    // imagen
     const img = document.createElement('img');
     img.src = `assets/productos/${p.producto}.png`;
     img.onerror = () => img.src = `assets/productos/${p.producto}.jpg`;
 
-    // nombre
     const h4 = document.createElement('h4');
     h4.textContent = p.producto;
 
-    // precio
     const precioDiv = document.createElement('div');
     precioDiv.className = 'precio';
     precioDiv.textContent = `${p.coins} coins`;
 
-    // botón agregar
     const btn = document.createElement('button');
     btn.textContent = 'Agregar';
     btn.onclick = () => agregarAlCarrito(p.producto, p.coins);
 
-    // ensamblar
     tarj.append(img, h4, precioDiv, btn);
     tiendaDiv.appendChild(tarj);
+  });
+}
+
+async function cargarHistorial() {
+  historialList.innerHTML = '';
+  const q = query(collection(db, 'compras'), where('cedula', '==', userCed));
+  const snap = await getDocs(q);
+  if (snap.empty) {
+    historialList.innerHTML = '<li style="text-align:center;color:#777;">Sin compras</li>';
+    return;
+  }
+  snap.forEach(doc => {
+    const c = doc.data();
+    const fecha = c.fecha?.toDate().toLocaleString('es-EC') || '-';
+    const productos = c.items.map(i => i.nombre).join(', ');
+    const li = document.createElement('li');
+    li.innerHTML = `<span>${fecha}</span><span>${productos}</span><span>${c.total} c</span>`;
+    historialList.appendChild(li);
   });
 }
 
@@ -127,7 +140,6 @@ function actualizarCarrito() {
   });
   bolsaSpan.textContent = `${carrito.length} · ${total} c`;
 
-  // Botón finalizar
   if (carrito.length && !document.getElementById('btnFin')) {
     const btn = document.createElement('button');
     btn.id = 'btnFin';
@@ -152,13 +164,11 @@ async function confirmarCompra(){
   const total = carrito.reduce((t,i)=>t+i.precio,0);
   if (total > coinsUsuario) return alert('Fondos insuficientes');
 
-  // 1. Descuenta coins
   const nuevoSaldo = coinsUsuario - total;
   await updateDoc(doc(db, 'usuarios', userId), { coins_ganados: nuevoSaldo });
 
-  // 2. Graba historial
   await addDoc(collection(db, 'compras'), {
-    cedula: cedulaInput.value.trim(),
+    cedula: userCed,
     nombre: datosUl.querySelector('li:nth-child(3)').textContent.replace('Nombre: ',''),
     cedis:  datosUl.querySelector('li:nth-child(4)').textContent.replace('Cedis: ',''),
     items:  carrito,
@@ -166,13 +176,13 @@ async function confirmarCompra(){
     fecha:  serverTimestamp()
   });
 
-  // 3. Actualiza UI
   coinsUsuario = nuevoSaldo;
-  coinsP.textContent = `Mis coins: ${coinsUsuario}`;
+  coinsP.textContent = coinsUsuario;
   carrito = [];
   actualizarCarrito();
   cerrarModal();
   mostrarToast();
+  cargarHistorial();
 }
 
 function mostrarToast(){
