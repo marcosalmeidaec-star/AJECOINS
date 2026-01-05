@@ -1,64 +1,42 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AJE Coins - Admin</title>
-<link rel="stylesheet" href="styles.css">
+  <meta charset="UTF-8">
+  <title>Admin AJE Coins</title>
+  <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
+  <div class="container">
+    <h1>Panel Admin AJE Coins</h1>
 
-<div class="container">
-    <h1>Panel Administrador - AJE Coins</h1>
+    <!-- Subida de Usuarios -->
+    <section class="panel">
+      <h2>Usuarios y Coins</h2>
+      <input type="file" id="fileUsuarios" accept=".csv">
+      <button id="uploadUsuarios">Subir Usuarios</button>
+      <p id="statusUsuarios"></p>
+      <div id="listaUsuarios"></div>
+    </section>
 
-    <!-- 🔹 Subir CSV de Coins -->
-    <div class="card">
-        <h3>Subir archivo CSV de Coins ganados</h3>
-        <input type="file" id="archivoCSV" accept=".csv">
-        <button id="btnSubirCoins" class="btn-primary full">Subir Coins</button>
-        <p id="estadoSubida"></p>
-    </div>
+    <!-- Subida de Productos -->
+    <section class="panel">
+      <h2>Productos y Valor en Coins</h2>
+      <input type="file" id="fileProductos" accept=".csv">
+      <button id="uploadProductos">Subir Productos</button>
+      <p id="statusProductos"></p>
+      <div id="listaProductos"></div>
+    </section>
 
-    <!-- 🔹 Subir CSV de Productos -->
-    <div class="card">
-        <h3>Cargar catálogo de productos</h3>
-        <input type="file" id="productosInput" accept=".csv">
-        <p id="productosStatus"></p>
-        <table id="tablaProductos" class="tabla">
-            <thead>
-                <tr><th>Producto</th><th>Coins</th><th>Imagen</th></tr>
-            </thead>
-            <tbody></tbody>
-        </table>
-    </div>
+    <!-- Historial de Canjes -->
+    <section class="panel">
+      <h2>Historial de Canjes</h2>
+      <input type="date" id="filtroFecha">
+      <button id="filtrarCanjes">Filtrar</button>
+      <button id="descargarCanjes">Descargar CSV</button>
+      <div id="listaCanjes"></div>
+    </section>
+  </div>
 
-    <!-- 🔹 Tabla Usuarios -->
-    <div class="card">
-        <h3>Usuarios y Coins actuales</h3>
-        <table id="tablaUsuarios" class="tabla">
-            <thead>
-                <tr><th>Cédula</th><th>Nombre</th><th>CEDIS</th><th>Coins actuales</th></tr>
-            </thead>
-            <tbody></tbody>
-        </table>
-    </div>
-
-    <!-- 🔹 Tabla Canjes Globales -->
-    <div class="card">
-        <h3>Productos solicitados por los usuarios</h3>
-        <button id="btnDescargarCSV" class="btn-secondary full">Descargar CSV</button>
-        <table id="tablaCanjes" class="tabla">
-            <thead>
-                <tr><th>Fecha</th><th>Cédula</th><th>Nombre</th><th>Producto</th><th>Coins canjeados</th><th>Saldo final</th></tr>
-            </thead>
-            <tbody></tbody>
-        </table>
-    </div>
-
-    <br>
-    <a href="index.html">⬅ Volver al inicio</a>
-</div>
-
-<script type="module" src="admin.js"></script>
+  <script type="module" src="js/admin.js"></script>
 </body>
 </html>
