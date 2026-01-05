@@ -18,25 +18,28 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
+// ----- USUARIOS -----
 const fileInput = document.getElementById("fileInput");
 const uploadBtn = document.getElementById("uploadBtn");
 const usersBody = document.querySelector("#usersTable tbody");
-const productsBody = document.querySelector("#productsTable tbody");
 
 uploadBtn.addEventListener("click", async () => {
   const file = fileInput.files[0];
-  if (!file) return alert("Selecciona un archivo CSV");
+  if (!file) return alert("Selecciona el CSV de usuarios");
   const text = await file.text();
   const lines = text.trim().split("\n").slice(1);
   for (const line of lines) {
-    const [producto, coins] = line.split(",");
-    await addDoc(collection(db, "productos"), {
-      producto: producto.trim(),
-      coins: parseInt(coins.trim(), 10)
+    const [fecha, cedula, nombre, cedis, coins_ganados] = line.split(",");
+    await addDoc(collection(db, "usuarios"), {
+      fecha: fecha.trim(),
+      cedula: cedula.trim(),
+      nombre: nombre.trim(),
+      cedis: cedis.trim(),
+      coins_ganados: parseInt(coins_ganados.trim(), 10)
     });
   }
-  alert("Archivo cargado");
-  loadProducts();
+  alert("Usuarios cargados");
+  loadUsers();
 });
 
 async function loadUsers() {
@@ -55,6 +58,27 @@ async function loadUsers() {
   });
 }
 
+// ----- PRODUCTOS -----
+const productFileInput = document.getElementById("productFileInput");
+const uploadProductBtn = document.getElementById("uploadProductBtn");
+const productsBody = document.querySelector("#productsTable tbody");
+
+uploadProductBtn.addEventListener("click", async () => {
+  const file = productFileInput.files[0];
+  if (!file) return alert("Selecciona el CSV de productos");
+  const text = await file.text();
+  const lines = text.trim().split("\n").slice(1);
+  for (const line of lines) {
+    const [producto, coins] = line.split(",");
+    await addDoc(collection(db, "productos"), {
+      producto: producto.trim(),
+      coins: parseInt(coins.trim(), 10)
+    });
+  }
+  alert("Productos cargados");
+  loadProducts();
+});
+
 async function loadProducts() {
   productsBody.innerHTML = "";
   const snap = await getDocs(collection(db, "productos"));
@@ -69,5 +93,6 @@ async function loadProducts() {
   });
 }
 
+// Cargar al iniciar
 loadUsers();
 loadProducts();
