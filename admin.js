@@ -1,140 +1,76 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
-import { getFirestore, collection, getDocs, doc, writeBatch } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+import {
+  getFirestore,
+  collection,
+  addDoc,
+  getDocs
+} from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
-// 🔹 Config Firebase
 const firebaseConfig = {
   apiKey: "AIzaSyCsz2EP8IsTlG02uU2_GRfyQeeajMDuJjI",
   authDomain: "ajecoins-73829.firebaseapp.com",
   projectId: "ajecoins-73829",
-  storageBucket: "ajecoins-73829.appspot.com",
+  storageBucket: "ajecoins-73829.firebasestorage.app",
   messagingSenderId: "247461322350",
   appId: "1:247461322350:web:802185ad39249ca650507f"
 };
 
-// 🔹 Inicializar Firebase
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// 🔹 Detectar separador CSV/TSV
-function detectSeparator(text) {
-  const firstLine = text.split("\n")[0];
-  if (firstLine.includes("\t")) return "\t";
-  if (firstLine.includes(";")) return ";";
-  return ",";
-}
+const fileInput = document.getElementById("fileInput");
+const uploadBtn = document.getElementById("uploadBtn");
+const usersBody = document.querySelector("#usersTable tbody");
+const productsBody = document.querySelector("#productsTable tbody");
 
-// 🔹 Subir CSV/TSV
-async function handleFileUpload(file, tipo) {
-  if (!file) return;
-  const loader = document.getElementById("loading");
-  loader.style.display = "block";
-
-  try {
-    const text = await file.text();
-    const separator = detectSeparator(text);
-    const lines = text.split("\n").map(l => l.trim()).filter(l => l);
-    if (lines.length < 2) throw new Error("Archivo vacío o sin datos");
-
-    const batch = writeBatch(db);
-
-    if (tipo === "usuarios") {
-      const data = lines.slice(1).map(line => {
-        const values = line.split(separator).map(v => v.trim());
-        return {
-          fecha: values[0] || "",
-          cedula: values[1] || "",
-          nombre: values[2] || "",
-          cedis: values[3] || "",
-          coins_ganados: parseInt(values[4]) || 0
-        };
-      }).filter(u => u.cedula);
-
-      data.forEach(u => {
-        const docRef = doc(db, "usuarios", u.cedula);
-        batch.set(docRef, u);
-      });
-      await batch.commit();
-      alert("✅ Usuarios cargados correctamente");
-      loadUsuarios();
-
-    } else if (tipo === "productos") {
-      const data = lines.slice(1).map((line, index) => {
-        const values = line.split(separator).map(v => v.trim());
-        return {
-          id: `prod_${index+1}`,
-          nombre: values[0] || "",
-          coins: parseInt(values[1]) || 0
-        };
-      }).filter(p => p.nombre);
-
-      data.forEach(p => {
-        const docRef = doc(db, "productos", p.id);
-        batch.set(docRef, p);
-      });
-      await batch.commit();
-      alert("✅ Productos cargados correctamente");
-      loadProductos();
-    }
-
-  } catch (err) {
-    console.error(err);
-    alert("❌ Error al procesar el archivo. Verifica el formato CSV/TSV");
+uploadBtn.addEventListener("click", async () => {
+  const file = fileInput.files[0];
+  if (!file) return alert("Selecciona un archivo CSV");
+  const text = await file.text();
+  const lines = text.trim().split("\n").slice(1);
+  for (const line of lines) {
+    const [fecha, cedula, nombre, cedis, coins_ganados] = line.split(",");
+    await addDoc(collection(db, "usuarios"), {
+      fecha: fecha.trim(),
+      cedula: cedula.trim(),
+      nombre: nombre.trim(),
+      cedis: cedis.trim(),
+      coins_ganados: parseInt(coins_ganados.trim(), 10)
+    });
   }
+  alert("Archivo cargado");
+  loadUsers();
+});
 
-  loader.style.display = "none";
-}
-
-// 🔹 Cargar usuarios
-async function loadUsuarios() {
-  const table = document.getElementById("usuarios-body");
-  table.innerHTML = "";
-  try {
-    const snapshot = await getDocs(collection(db, "usuarios"));
-    snapshot.forEach(doc => {
-      const u = doc.data();
-      const row = `<tr>
+async function loadUsers() {
+  usersBody.innerHTML = "";
+  const snap = await getDocs(collection(db, "usuarios"));
+  snap.forEach(d => {
+    const u = d.data();
+    usersBody.innerHTML += `
+      <tr>
         <td>${u.fecha}</td>
         <td>${u.cedula}</td>
         <td>${u.nombre}</td>
         <td>${u.cedis}</td>
         <td>${u.coins_ganados}</td>
       </tr>`;
-      table.innerHTML += row;
-    });
-  } catch (err) {
-    console.error(err);
-    alert("Error cargando usuarios desde Firebase");
-  }
+  });
 }
 
-// 🔹 Cargar productos con imagen
-async function loadProductos() {
-  const table = document.getElementById("productos-body");
-  table.innerHTML = "";
-  try {
-    const snapshot = await getDocs(collection(db, "productos"));
-    snapshot.forEach(doc => {
-      const p = doc.data();
-      const imgSrc = `assets/productos/${p.nombre}.png`;
-
-      const row = `<tr>
-        <td><img src="${imgSrc}" alt="${p.nombre}" width="50" height="50"></td>
-        <td>${p.nombre}</td>
+async function loadProducts() {
+  productsBody.innerHTML = "";
+  const snap = await getDocs(collection(db, "productos"));
+  snap.forEach(d => {
+    const p = d.data();
+    productsBody.innerHTML += `
+      <tr>
+        <td>${p.producto}</td>
+        <td><img src="assets/productos/${p.imagen}" alt="${p.producto}"/></td>
         <td>${p.coins}</td>
       </tr>`;
-      table.innerHTML += row;
-    });
-  } catch (err) {
-    console.error(err);
-    alert("Error cargando productos desde Firebase");
-  }
+  });
 }
 
-// 🔹 Event listeners
-document.getElementById("file-usuarios").addEventListener("change", e => handleFileUpload(e.target.files[0], "usuarios"));
-document.getElementById("file-productos").addEventListener("change", e => handleFileUpload(e.target.files[0], "productos"));
-document.getElementById("refresh-btn").addEventListener("click", () => { loadUsuarios(); loadProductos(); });
-
-// 🔹 Cargar datos al inicio
-loadUsuarios();
-loadProductos();
+loadUsers();
+loadProducts();
