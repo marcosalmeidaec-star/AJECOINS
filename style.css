@@ -1,11 +1,139 @@
-body { font-family: Arial, sans-serif; padding: 20px; background:#f8fafc; }
-h1 { color:#065f46; margin-bottom:10px; }
-table { width: 100%; border-collapse: collapse; margin-bottom:20px; }
-th, td { border:1px solid #ddd; padding:8px; text-align:left; }
-th { background:#d1fae5; color:#065f46; }
-tr:hover { background:#f0fdf4; }
-#loading { display:none; color:#065f46; font-weight:bold; margin-bottom:10px; }
-label { cursor:pointer; background:#d1fae5; padding:6px 12px; border-radius:6px; display:inline-block; margin-bottom:10px; }
-button { background:#065f46; color:white; padding:8px 16px; border:none; border-radius:6px; cursor:pointer; margin-top:10px; }
-button:hover { background:#047857; }
-img { border-radius:6px; object-fit:cover; }
+/* ===== BASE ===== */
+body {
+  font-family: Arial, sans-serif;
+  padding: 20px;
+  background: #f8fafc;
+  margin: 0;
+}
+
+h1 {
+  color: #065f46;
+  margin-bottom: 10px;
+}
+
+/* ===== TABLAS ===== */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 20px;
+}
+
+th, td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: left;
+}
+
+th {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+tr:hover {
+  background: #f0fdf4;
+}
+
+/* ===== ELEMENTOS UI ===== */
+#loading {
+  display: none;
+  color: #065f46;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+label {
+  cursor: pointer;
+  background: #d1fae5;
+  padding: 6px 12px;
+  border-radius: 6px;
+  display: inline-block;
+  margin-bottom: 10px;
+}
+
+button {
+  background: #065f46;
+  color: white;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-top: 10px;
+}
+
+button:hover {
+  background: #047857;
+}
+
+img {
+  border-radius: 6px;
+  object-fit: cover;
+}
+
+/* ===== USUARIO: LOGIN ===== */
+#login {
+  margin-bottom: 20px;
+}
+
+#login input {
+  padding: 6px 10px;
+  margin-right: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+/* ===== USUARIO: INFO ===== */
+#userInfo {
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 20px;
+}
+
+/* ===== USUARIO: PRODUCTOS ===== */
+#productosList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.producto {
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 10px;
+  text-align: center;
+  background: #fff;
+  width: 130px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.producto img {
+  width: 60px;
+  height: 60px;
+  margin-bottom: 6px;
+}
+
+.producto button {
+  margin-top: 6px;
+  width: 100%;
+}
+
+/* ===== USUARIO: CARRITO ===== */
+#carrito {
+  background: #fffbeb;
+  border: 1px solid #facc15;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 20px;
+}
+
+#carritoList {
+  margin: 8px 0 0 20px;
+  padding: 0;
+}
+
+/* ===== USUARIO: HISTORIAL ===== */
+#historial {
+  margin-top: 20px;
+}
