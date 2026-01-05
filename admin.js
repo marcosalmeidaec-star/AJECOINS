@@ -95,8 +95,11 @@ async function loadProducts() {
   });
 }
 
-// ----------- HISTORIAL ----------
+// ----------- HISTORIAL + EXPORTAR -----------
 const comprasBody = document.querySelector('#comprasTable tbody');
+const btnExport   = document.getElementById('btnExport');
+
+btnExport.addEventListener('click', exportarComprasCSV);
 
 async function loadCompras(){
   comprasBody.innerHTML = '';
@@ -115,6 +118,20 @@ async function loadCompras(){
         <td>${c.total}</td>
       </tr>`;
   });
+}
+
+function exportarComprasCSV(){
+  let csv = 'Fecha,Cedula,Nombre,Cedis,Productos,Total\n';
+  const filas = Array.from(comprasBody.querySelectorAll('tr'));
+  filas.forEach(r=>{
+    const celdas = Array.from(r.querySelectorAll('td')).map(td=>td.textContent.replace(/,/g,' '));
+    csv += celdas.join(',') + '\n';
+  });
+  const blob = new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = 'historial_compras.csv';
+  link.click();
 }
 
 // ---------- INICIAL ----------
