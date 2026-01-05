@@ -1,230 +1,68 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AJE Coins - Usuario</title>
-<link rel="stylesheet" href="styles.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AJE Coins - Usuario</title>
+  <link rel="stylesheet" href="styles.css">
 </head>
-
 <body>
 
-<header class="topbar">
-    <h2>AJE Coins</h2>
-</header>
+<div class="container">
+  <h1 class="center">AJE Coins</h1>
 
-<main class="container">
+  <!-- BUSCADOR DE USUARIO -->
+  <div class="card center">
+    <input type="text" id="cedulaInput" placeholder="Ingresa tu cédula">
+    <button id="buscarBtn" class="btn-primary full">Buscar</button>
+  </div>
 
-    <!-- BUSCADOR -->
-    <div class="card center">
-        <input type="text" id="cedulaInput" placeholder="Ingresa tu cédula">
-        <button id="buscarBtn" class="btn-primary">Buscar</button>
+  <div id="mensaje" class="mensaje"></div>
+  <div id="alertaCoins" class="alerta"></div>
+
+  <!-- INFO USUARIO -->
+  <section id="infoUsuario" style="display:none">
+    <div class="card usuario-card">
+      <h3 id="nombre"></h3>
+      <p>Coins disponibles: <strong id="coinsActuales"></strong></p>
+      <p class="cedis">CEDIS: <span id="cedis"></span></p>
     </div>
 
-    <!-- MENSAJES -->
-    <div id="mensaje" class="mensaje"></div>
-    <div id="alertaCoins" class="alerta"></div>
+    <!-- PRODUCTOS -->
+    <div class="card">
+      <h3>Catálogo de productos</h3>
+      <div id="productosContainer" class="productos-grid"></div>
+    </div>
 
-    <!-- INFO USUARIO -->
-    <section id="infoUsuario" style="display:none">
+    <!-- CARRITO -->
+    <div class="card">
+      <h3>Carrito</h3>
+      <ul id="listaCarrito" class="carrito-lista"></ul>
+      <button id="btnSolicitar" class="btn-primary full">Solicitar productos</button>
+      <button id="btnSolicitados" class="btn-secondary full">📦 Mis productos solicitados</button>
+    </div>
 
-        <div class="card usuario-card">
-            <h3 id="nombre"></h3>
-            <p>Coins disponibles: <strong id="coinsActuales"></strong></p>
-            <p class="cedis">CEDIS: <span id="cedis"></span></p>
-        </div>
+    <!-- HISTORIAL DE PRODUCTOS SOLICITADOS -->
+    <div id="seccionHistorial" class="card" style="display:none">
+      <h3>Productos solicitados</h3>
+      <table class="tabla">
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Producto</th>
+            <th>Coins canjeados</th>
+            <th>Saldo después del canje</th>
+          </tr>
+        </thead>
+        <tbody id="tablaHistorial"></tbody>
+      </table>
+    </div>
+  </section>
 
-        <!-- PRODUCTOS -->
-        <div class="card">
-            <h3>Productos</h3>
-            <div id="productosContainer" class="productos-grid"></div>
-        </div>
+  <br>
+  <a href="index.html" class="btn-secondary full">⬅ Volver al inicio</a>
+</div>
 
-        <!-- CARRITO -->
-        <div class="card">
-            <h3>Carrito</h3>
-            <ul id="listaCarrito" class="carrito-lista"></ul>
-
-            <button id="btnSolicitar" class="btn-primary full">
-                Solicitar productos
-            </button>
-
-            <button id="btnSolicitados" class="btn-secondary full">
-                📦 Mis productos solicitados
-            </button>
-        </div>
-
-        <!-- HISTORIAL -->
-        <div id="seccionHistorial" class="card" style="display:none">
-            <h3>Productos solicitados</h3>
-            <table class="tabla">
-                <thead>
-                    <tr>
-                        <th>Fecha</th>
-                        <th>Producto</th>
-                        <th>Coins</th>
-                        <th>Saldo</th>
-                    </tr>
-                </thead>
-                <tbody id="tablaHistorial"></tbody>
-            </table>
-        </div>
-
-    </section>
-
-</main>
-
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
-import {
-    getFirestore, doc, getDoc, collection, getDocs, addDoc, setDoc
-} from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
-
-const firebaseConfig = {
-    apiKey: "AIzaSyCsz2EP8IsTlG02uU2_GRfyQeeajMDuJjI",
-    authDomain: "ajecoins-73829.firebaseapp.com",
-    projectId: "ajecoins-73829",
-    storageBucket: "ajecoins-73829.firebasestorage.app",
-    messagingSenderId: "247461322350",
-    appId: "1:247461322350:web:802185ad39249ca650507f"
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-
-const buscarBtn = document.getElementById("buscarBtn");
-const cedulaInput = document.getElementById("cedulaInput");
-const mensaje = document.getElementById("mensaje");
-const alerta = document.getElementById("alertaCoins");
-
-const nombre = document.getElementById("nombre");
-const coinsActuales = document.getElementById("coinsActuales");
-const cedis = document.getElementById("cedis");
-const infoUsuario = document.getElementById("infoUsuario");
-
-const productosContainer = document.getElementById("productosContainer");
-const listaCarrito = document.getElementById("listaCarrito");
-const btnSolicitar = document.getElementById("btnSolicitar");
-const btnSolicitados = document.getElementById("btnSolicitados");
-const tablaHistorial = document.getElementById("tablaHistorial");
-const seccionHistorial = document.getElementById("seccionHistorial");
-
-let carrito = [];
-let coinsUsuario = 0;
-let cedulaGlobal = "";
-
-function mostrarAlerta(texto) {
-    alerta.innerText = texto;
-    alerta.style.display = "block";
-    setTimeout(() => alerta.style.display = "none", 3000);
-}
-
-function actualizarCarrito() {
-    listaCarrito.innerHTML = "";
-    let total = 0;
-
-    carrito.forEach(item => {
-        total += item.coins * item.cantidad;
-        const li = document.createElement("li");
-        li.innerHTML = `${item.nombre} x${item.cantidad} 
-            <strong>${item.coins * item.cantidad}</strong>`;
-        listaCarrito.appendChild(li);
-    });
-
-    coinsActuales.innerText = coinsUsuario - total;
-}
-
-buscarBtn.onclick = async () => {
-    const cedula = cedulaInput.value.trim();
-    if (!cedula) return;
-
-    cedulaGlobal = cedula;
-    mensaje.innerText = "Cargando...";
-    productosContainer.innerHTML = "";
-    listaCarrito.innerHTML = "";
-    carrito = [];
-
-    const userSnap = await getDoc(doc(db, "usuarios", cedula));
-    if (!userSnap.exists()) {
-        mensaje.innerText = "Usuario no encontrado";
-        return;
-    }
-
-    const data = userSnap.data();
-    nombre.innerText = data.nombre;
-    coinsUsuario = data.coins_actuales;
-    coinsActuales.innerText = coinsUsuario;
-    cedis.innerText = data.cedis || "-";
-
-    infoUsuario.style.display = "block";
-    mensaje.innerText = "";
-
-    const productosSnap = await getDocs(collection(db, "productos"));
-    productosSnap.forEach(p => {
-        const prod = p.data();
-        const card = document.createElement("div");
-        card.className = "producto-card";
-        card.innerHTML = `
-            <img src="${prod.imagen}">
-            <h4>${prod.nombre}</h4>
-            <p>${prod.coins} coins</p>
-            <button>Agregar</button>
-        `;
-        card.querySelector("button").onclick = () => {
-            if (prod.coins > coinsActuales.innerText) {
-                mostrarAlerta("❌ Coins insuficientes");
-                return;
-            }
-            const ex = carrito.find(i => i.nombre === prod.nombre);
-            ex ? ex.cantidad++ : carrito.push({ ...prod, cantidad: 1 });
-            actualizarCarrito();
-        };
-        productosContainer.appendChild(card);
-    });
-};
-
-btnSolicitar.onclick = async () => {
-    if (!carrito.length) return mostrarAlerta("Carrito vacío");
-
-    const total = carrito.reduce((s,i)=>s+i.coins*i.cantidad,0);
-    const fecha = new Date().toLocaleDateString("es-ES");
-
-    for (const item of carrito) {
-        await addDoc(collection(db,"usuarios",cedulaGlobal,"movimientos"),{
-            fecha,
-            producto: item.nombre,
-            coins_canjeados: item.coins * item.cantidad,
-            coins_actuales: coinsUsuario - total
-        });
-    }
-
-    await setDoc(doc(db,"usuarios",cedulaGlobal),{
-        coins_actuales: coinsUsuario - total
-    },{merge:true});
-
-    coinsUsuario -= total;
-    carrito = [];
-    actualizarCarrito();
-    mostrarAlerta("✅ Productos solicitados correctamente");
-};
-
-btnSolicitados.onclick = async () => {
-    seccionHistorial.style.display = "block";
-    tablaHistorial.innerHTML = "";
-
-    const snap = await getDocs(collection(db,"usuarios",cedulaGlobal,"movimientos"));
-    snap.forEach(m => {
-        const d = m.data();
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-            <td>${d.fecha}</td>
-            <td>${d.producto}</td>
-            <td>${d.coins_canjeados}</td>
-            <td>${d.coins_actuales}</td>
-        `;
-        tablaHistorial.appendChild(tr);
-    });
-};
-</script>
+<script type="module" src="usuario.js"></script>
 </body>
 </html>
