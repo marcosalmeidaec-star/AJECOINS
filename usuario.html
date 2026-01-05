@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Mi Cuenta – AJE Coins</title>
+  <link rel="stylesheet" href="usuario.css"/>
+  <script type="module" src="usuario.js" defer></script>
+</head>
+<body>
+  <section id="login" class="card">
+    <h1>AJE Coins</h1>
+    <input id="cedulaInput" type="text" placeholder="Ingresa tu cédula" maxlength="10"/>
+    <button id="ingresarBtn">Ingresar</button>
+    <p id="errorMsg" class="error"></p>
+  </section>
+
+  <section id="cuenta" class="card hidden">
+    <h2>Mi información</h2>
+    <ul id="datos"></ul>
+    <p id="coins" class="coins"></p>
+    <button id="cerrarBtn">Cerrar</button>
+  </section>
+</body>
+</html>
