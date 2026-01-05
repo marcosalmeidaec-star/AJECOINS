@@ -1,21 +1,17 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
-import { getFirestore } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+// Import Firebase
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+import { getFirestore, collection, setDoc, doc, getDocs } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
-// 🔹 Configuración Firebase
+// Configuración de Firebase
 const firebaseConfig = {
   apiKey: "AIzaSyCsz2EP8IsTlG02uU2_GRfyQeeajMDuJjI",
   authDomain: "ajecoins-73829.firebaseapp.com",
   projectId: "ajecoins-73829",
-  storageBucket: "ajecoins-73829.firebasestorage.app",
+  storageBucket: "ajecoins-73829.appspot.com",
   messagingSenderId: "247461322350",
   appId: "1:247461322350:web:802185ad39249ca650507f"
 };
 
-// 🔹 Inicializar app
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-
-// 🔹 Hacer db accesible globalmente
-window.db = db;
-
-console.log("🔥 Firebase conectado correctamente");
+// Inicializar Firebase
+export const app = initializeApp(firebaseConfig);
+export const db = getFirestore(app);
