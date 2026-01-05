@@ -35,13 +35,20 @@
       setLoading(false);
     };
 
-    // 🔹 Efecto inicial: cargar todo
+    // 🔹 Efecto inicial
     useEffect(() => {
       loadUsuarios();
       loadProductos();
     }, []);
 
-    // 🔹 Manejo de carga de archivo CSV
+    // 🔹 Detectar separador CSV
+    const detectSeparator = (text) => {
+      const firstLine = text.split("\n")[0];
+      if (firstLine.includes(";")) return ";";
+      return ",";
+    };
+
+    // 🔹 Manejo de carga de archivo CSV flexible
     const handleFileUpload = async (e, tipo) => {
       const file = e.target.files[0];
       if (!file) return;
@@ -49,13 +56,13 @@
 
       try {
         const text = await file.text();
+        const separator = detectSeparator(text);
         const lines = text.split("\n").filter(l => l.trim());
-        const headers = lines[0].split(",").map(h => h.trim());
+        const headers = lines[0].split(separator).map(h => h.trim());
 
         if (tipo === "usuarios") {
-          // Formato: fecha,cedula,nombre,cedis,coins_ganados
           const data = lines.slice(1).map(line => {
-            const values = line.split(",");
+            const values = line.split(separator);
             return {
               fecha: values[0]?.trim(),
               cedula: values[1]?.trim(),
@@ -65,21 +72,18 @@
             };
           }).filter(u => u.cedula);
 
-          // Guardar en Firestore
           const batch = db.batch();
           data.forEach(u => {
             const docRef = db.collection("usuarios").doc(u.cedula);
             batch.set(docRef, u);
           });
           await batch.commit();
-
           alert("✅ Usuarios cargados correctamente");
           loadUsuarios();
 
         } else if (tipo === "productos") {
-          // Formato: nombre,coins
           const data = lines.slice(1).map((line, index) => {
-            const values = line.split(",");
+            const values = line.split(separator);
             return {
               id: `prod_${index+1}`,
               nombre: values[0]?.trim(),
@@ -87,14 +91,12 @@
             };
           }).filter(p => p.nombre);
 
-          // Guardar en Firestore
           const batch = db.batch();
           data.forEach(p => {
             const docRef = db.collection("productos").doc(p.id);
             batch.set(docRef, p);
           });
           await batch.commit();
-
           alert("✅ Productos cargados correctamente");
           loadProductos();
         }
@@ -111,12 +113,11 @@
     return React.createElement("div", {className:"p-6"},
       React.createElement("h1", {className:"text-2xl font-bold text-green-800 mb-4"}, "AjeCoins Admin"),
 
-      // Botón actualizar manual
       React.createElement("button", {onClick:()=>{loadUsuarios(); loadProductos();}, className:"bg-green-600 text-white px-4 py-2 rounded mb-4"}, "Actualizar"),
 
       loading ? React.createElement("p", {className:"text-green-700 mb-4"},"Cargando...") : null,
 
-      // 🔹 Carga de archivos Usuarios
+      // Cargar Usuarios
       React.createElement("div", {className:"mb-6"},
         React.createElement("label", {className:"flex items-center gap-2 cursor-pointer bg-green-50 px-4 py-2 rounded border border-green-300 hover:bg-green-100"},
           "Cargar Usuarios (CSV)",
@@ -124,7 +125,7 @@
         )
       ),
 
-      // 🔹 Tabla de usuarios
+      // Tabla de Usuarios
       React.createElement("h2",{className:"font-bold text-green-800 mb-2"},"Usuarios"),
       React.createElement("div",{className:"overflow-x-auto mb-6"},
         React.createElement("table",{className:"w-full border-collapse"},
@@ -149,7 +150,7 @@
         )
       ),
 
-      // 🔹 Carga de archivos Productos
+      // Cargar Productos
       React.createElement("div", {className:"mb-6"},
         React.createElement("label", {className:"flex items-center gap-2 cursor-pointer bg-green-50 px-4 py-2 rounded border border-green-300 hover:bg-green-100"},
           "Cargar Productos (CSV)",
@@ -157,7 +158,7 @@
         )
       ),
 
-      // 🔹 Tabla de productos
+      // Tabla de Productos
       React.createElement("h2",{className:"font-bold text-green-800 mb-2"},"Productos"),
       React.createElement("div",{className:"overflow-x-auto"},
         React.createElement("table",{className:"w-full border-collapse"},
