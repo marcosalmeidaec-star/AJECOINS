@@ -1,6 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
 import { getFirestore } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
 
+// 🔹 Configuración Firebase
 const firebaseConfig = {
   apiKey: "AIzaSyCsz2EP8IsTlG02uU2_GRfyQeeajMDuJjI",
   authDomain: "ajecoins-73829.firebaseapp.com",
@@ -10,10 +11,11 @@ const firebaseConfig = {
   appId: "1:247461322350:web:802185ad39249ca650507f"
 };
 
+// 🔹 Inicializar app
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// hacemos db global
+// 🔹 Hacer db accesible globalmente
 window.db = db;
 
 console.log("🔥 Firebase conectado correctamente");
