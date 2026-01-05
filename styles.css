@@ -1,139 +1,280 @@
+/* =========================
+   RESET & BASE
+========================= */
 * {
     box-sizing: border-box;
-    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', Tahoma, sans-serif;
 }
 
 body {
-    margin: 0;
     background: #f4f6f8;
+    color: #333;
+    min-height: 100vh;
 }
 
-.topbar {
-    background: #00a651;
+a {
+    text-decoration: none;
+}
+
+/* =========================
+   HEADERS / TOP BAR
+========================= */
+header,
+.topbar,
+.top-bar {
+    background: linear-gradient(135deg, #1f2933, #111827);
     color: white;
-    padding: 15px;
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+header h1,
+header h2 {
+    font-size: 20px;
+    font-weight: 600;
+}
+
+/* =========================
+   CONTAINER
+========================= */
+.container {
+    max-width: 1100px;
+    margin: 30px auto;
+    padding: 0 16px;
+}
+
+/* =========================
+   CARDS
+========================= */
+.card {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 24px;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+}
+
+.card h2,
+.card h3 {
+    margin-bottom: 14px;
+    color: #1f2933;
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* =========================
+   CENTER
+========================= */
+.center {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
     text-align: center;
 }
 
-.container {
-    max-width: 1100px;
-    margin: auto;
-    padding: 20px;
+/* =========================
+   BUTTONS
+========================= */
+button,
+.btn,
+.btn-primary,
+.btn-secondary,
+.btn-secundario {
+    border: none;
+    padding: 10px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all .2s ease;
 }
 
-.card {
-    background: white;
-    border-radius: 14px;
-    padding: 20px;
-    margin-bottom: 20px;
-    box-shadow: 0 4px 12px rgba(0,0,0,.08);
+.btn,
+.btn-primary {
+    background: #2563eb;
+    color: white;
 }
 
-.center { text-align: center; }
+.btn-secondary,
+.btn-secundario {
+    background: #e5e7eb;
+    color: #111827;
+}
 
-input {
+button:hover,
+.btn:hover {
+    opacity: 0.9;
+    transform: translateY(-1px);
+}
+
+.full {
     width: 100%;
-    padding: 14px;
-    border-radius: 10px;
-    border: 1px solid #ccc;
+}
+
+/* =========================
+   INPUTS
+========================= */
+input[type="text"],
+input[type="file"] {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1px solid #d1d5db;
     margin-bottom: 10px;
 }
 
-.btn-primary {
-    background: #00a651;
+/* =========================
+   STATUS & ALERTS
+========================= */
+.mensaje {
+    margin: 12px 0;
+    font-weight: 600;
+    color: #dc2626;
+}
+
+.alerta {
+    display: none;
+    margin: 12px 0;
+    padding: 10px;
+    border-radius: 8px;
+    background: #fde68a;
+    color: #92400e;
+    font-weight: 600;
+}
+
+.status {
+    margin-top: 10px;
+    font-weight: 600;
+    color: #2563eb;
+}
+
+.hint {
+    font-size: 13px;
+    color: #6b7280;
+    margin-bottom: 10px;
+}
+
+/* =========================
+   TABLES
+========================= */
+.table-wrapper {
+    overflow-x: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+thead {
+    background: #1f2933;
     color: white;
-    border: none;
-    padding: 14px;
-    border-radius: 12px;
-    cursor: pointer;
-    font-weight: bold;
-    transition: all .2s;
 }
 
-.btn-primary:hover {
-    background: #008f44;
-    transform: scale(1.03);
+th,
+td {
+    padding: 10px 12px;
+    text-align: left;
+    font-size: 14px;
 }
 
-.btn-secondary {
-    background: #e6f4ee;
-    color: #00a651;
-    border: none;
-    padding: 14px;
-    border-radius: 12px;
-    cursor: pointer;
-    font-weight: bold;
-    transition: all .2s;
+tbody tr:nth-child(even) {
+    background: #f9fafb;
 }
 
-.btn-secondary:hover {
-    background: #ccebdd;
-}
-
-.full { width: 100%; }
-
+/* =========================
+   PRODUCTOS GRID
+========================= */
 .productos-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill,minmax(180px,1fr));
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
     gap: 16px;
 }
 
 .producto-card {
-    border-radius: 14px;
-    padding: 15px;
+    background: #f9fafb;
+    border-radius: 10px;
+    padding: 12px;
     text-align: center;
-    background: #fff;
-    box-shadow: 0 2px 10px rgba(0,0,0,.1);
-    transition: all .2s;
-}
-
-.producto-card:hover {
-    transform: translateY(-5px);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
 }
 
 .producto-card img {
-    width: 100%;
+    max-width: 100%;
     height: 120px;
     object-fit: contain;
+    margin-bottom: 8px;
 }
 
-.producto-card button {
-    margin-top: 10px;
-    width: 100%;
-    background: #00a651;
-    color: white;
-    border: none;
-    padding: 10px;
-    border-radius: 10px;
-    cursor: pointer;
+.producto-card h4 {
+    margin-bottom: 6px;
+}
+
+.producto-card p {
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+/* =========================
+   CARRITO
+========================= */
+.carrito-lista {
+    list-style: none;
+    margin-bottom: 12px;
 }
 
 .carrito-lista li {
-    padding: 8px 0;
-    border-bottom: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+    border-bottom: 1px solid #e5e7eb;
 }
 
-.tabla {
-    width: 100%;
-    border-collapse: collapse;
+/* =========================
+   USUARIO CARD
+========================= */
+.usuario-card {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
 }
 
-.tabla th, .tabla td {
-    padding: 10px;
-    border-bottom: 1px solid #eee;
+.cedis {
+    font-size: 14px;
+    color: #6b7280;
 }
 
-.alerta {
-    display:none;
-    background:#ff4d4d;
-    color:white;
-    padding:12px;
-    border-radius:10px;
-    text-align:center;
-    margin:10px 0;
+/* =========================
+   INDEX
+========================= */
+body.center {
+    justify-content: center;
 }
 
-/* RESPONSIVE */
-@media(max-width:600px){
-    .container { padding: 10px; }
+body.center h1 {
+    margin-bottom: 20px;
+}
+
+/* =========================
+   RESPONSIVE
+========================= */
+@media (max-width: 600px) {
+    header h1,
+    header h2 {
+        font-size: 16px;
+    }
+
+    th,
+    td {
+        font-size: 12px;
+    }
 }
