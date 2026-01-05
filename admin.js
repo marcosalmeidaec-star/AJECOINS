@@ -2,12 +2,16 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebas
 import {
     getFirestore,
     doc,
+    getDoc,
     setDoc,
     collection,
-    getDocs
+    getDocs,
+    runTransaction
 } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
 
-// 🔹 Config Firebase
+/* =====================================================
+   🔥 FIREBASE
+===================================================== */
 const firebaseConfig = {
     apiKey: "AIzaSyCsz2EP8IsTlG02uU2_GRfyQeeajMDuJjI",
     authDomain: "ajecoins-73829.firebaseapp.com",
@@ -20,195 +24,172 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-const tablaBody = document.querySelector("#tablaDatos tbody");
+/* =====================================================
+   ELEMENTOS DOM
+===================================================== */
+const fileInput = document.getElementById("fileInput");
 const status = document.getElementById("status");
+const tablaBody = document.querySelector("#tablaDatos tbody");
 
-// ===================================================
-// 🔹 1. CARGAR DATOS EXISTENTES
-// ===================================================
-async function cargarDatosExistentes() {
+/* =====================================================
+   1️⃣ CARGAR HISTORIAL DE CARGAS (ADMIN)
+===================================================== */
+async function cargarHistorial() {
     tablaBody.innerHTML = "";
-    status.innerText = "⏳ Cargando datos existentes...";
-
     const usuariosSnap = await getDocs(collection(db, "usuarios"));
-    let total = 0;
 
-    for (const userDoc of usuariosSnap.docs) {
-        const userData = userDoc.data();
+    usuariosSnap.forEach(async userDoc => {
         const cedula = userDoc.id;
+        const userData = userDoc.data();
 
-        const movimientosSnap = await getDocs(
+        const movSnap = await getDocs(
             collection(db, "usuarios", cedula, "movimientos")
         );
 
-        movimientosSnap.forEach(mov => {
-            const data = mov.data();
+        movSnap.forEach(m => {
+            const d = m.data();
+            if (d.tipo !== "carga") return;
 
             const tr = document.createElement("tr");
             tr.innerHTML = `
-                <td>${data.fecha}</td>
+                <td>${d.fecha}</td>
                 <td>${cedula}</td>
                 <td>${userData.nombre}</td>
                 <td>${userData.cedis}</td>
-                <td>${data.coins_ganados}</td>
+                <td>${d.coins}</td>
             `;
             tablaBody.appendChild(tr);
-            total++;
         });
-    }
-
-    status.innerText =
-        total > 0
-            ? `📦 Registros cargados desde Firebase: ${total}`
-            : "ℹ️ No hay datos cargados aún";
+    });
 }
 
-cargarDatosExistentes();
+cargarHistorial();
 
-// ===================================================
-// 🔹 2. CARGA CSV DE COINS (USUARIOS)
-// ===================================================
-document.getElementById("fileInput").addEventListener("change", function (e) {
+/* =====================================================
+   2️⃣ SUBIR CSV DE COINS (ACUMULA / SOBREESCRIBE)
+===================================================== */
+fileInput.addEventListener("change", e => {
     const file = e.target.files[0];
     if (!file) return;
 
-    tablaBody.innerHTML = "";
     const reader = new FileReader();
 
-    reader.onload = async function (event) {
-        const lines = event.target.result.split(/\r?\n/);
-        let contador = 0;
+    reader.onload = async ev => {
+        const lines = ev.target.result.split(/\r?\n/);
+        let procesados = 0;
 
         for (let i = 1; i < lines.length; i++) {
             const row = lines[i].trim();
             if (!row) continue;
 
-            const cols = row.includes(";") ? row.split(";") : row.split(",");
-            if (cols.length < 5) continue;
+            const c = row.includes(";") ? row.split(";") : row.split(",");
+            if (c.length < 5) continue;
 
-            const fechaRaw = cols[0];
-            const fechaId = fechaRaw.replace(/\//g, "-");
-            const cedula = cols[1];
-            const nombre = cols[2];
-            const cedis = cols[3];
-            const coins = Number(cols[4]);
+            const fecha = c[0].trim();
+            const fechaId = fecha.replace(/\//g, "-");
+            const cedula = c[1].trim();
+            const nombre = c[2].trim();
+            const cedis = c[3].trim();
+            const coins = Number(c[4]);
 
             if (!cedula || isNaN(coins)) continue;
 
-            await setDoc(
-                doc(db, "usuarios", cedula),
-                { cedula, nombre, cedis },
-                { merge: true }
-            );
+            const userRef = doc(db, "usuarios", cedula);
+            const movRef = doc(db, "usuarios", cedula, "movimientos", fechaId);
 
-            await setDoc(
-                doc(db, "usuarios", cedula, "movimientos", fechaId),
-                {
-                    fecha: fechaRaw,
-                    coins_ganados: coins,
-                    producto: "",
-                    coins_canjeados: 0,
-                    coins_actuales: coins
+            await runTransaction(db, async tx => {
+                const userSnap = await tx.get(userRef);
+                const movSnap = await tx.get(movRef);
+
+                let saldoActual = 0;
+                if (userSnap.exists()) {
+                    saldoActual = userSnap.data().coins_actuales || 0;
                 }
-            );
 
-            const tr = document.createElement("tr");
-            tr.innerHTML = `
-                <td>${fechaRaw}</td>
-                <td>${cedula}</td>
-                <td>${nombre}</td>
-                <td>${cedis}</td>
-                <td>${coins}</td>
-            `;
-            tablaBody.appendChild(tr);
+                let ajuste = coins;
 
-            contador++;
-        }
+                // 🔁 si ya existe carga en esa fecha → revertimos antes
+                if (movSnap.exists()) {
+                    ajuste = coins - movSnap.data().coins;
+                }
 
-        status.innerText = `✅ Archivo cargado. Registros procesados: ${contador}`;
-    };
+                tx.set(userRef, {
+                    nombre,
+                    cedis,
+                    coins_actuales: saldoActual + ajuste
+                }, { merge: true });
 
-    reader.readAsText(file);
-});
-
-// ===================================================
-// 🔹 3. CARGA CSV DE PRODUCTOS (CATÁLOGO)
-// ===================================================
-const productosInput = document.getElementById("productosInput");
-const productosStatus = document.getElementById("productosStatus");
-const tablaProductosBody = document.querySelector("#tablaProductos tbody");
-
-// 🔹 Función para cargar productos desde Firestore al iniciar la página
-async function cargarProductos() {
-    tablaProductosBody.innerHTML = "";
-    const querySnapshot = await getDocs(collection(db, "productos"));
-    let contador = 0;
-
-    querySnapshot.forEach((doc) => {
-        const data = doc.data();
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-            <td>${data.nombre}</td>
-            <td>${data.coins}</td>
-            <td><img src="${data.imagen}" width="50"></td>
-        `;
-        tablaProductosBody.appendChild(tr);
-        contador++;
-    });
-
-    productosStatus.innerText = `🛒 Productos cargados: ${contador}`;
-}
-
-// 🔹 Ejecutar al iniciar la página
-cargarProductos();
-
-// 🔹 Manejar carga de CSV de productos
-productosInput.addEventListener("change", function (e) {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    tablaProductosBody.innerHTML = "";
-    const reader = new FileReader();
-
-    reader.onload = async function (event) {
-        const lines = event.target.result.split(/\r?\n/);
-        let contador = 0;
-
-        for (let i = 1; i < lines.length; i++) {
-            const row = lines[i].trim();
-            if (!row) continue;
-
-            const cols = row.includes(";") ? row.split(";") : row.split(",");
-            if (cols.length < 2) continue;
-
-            const nombre = cols[0].trim();
-            const coins = Number(cols[1]);
-
-            if (!nombre || isNaN(coins)) continue;
-
-            const id = nombre.toLowerCase().replace(/\s+/g, "_");
-            const imagen = `assets/productos/${id}.png`; // Cambiado a jpg
-
-            await setDoc(doc(db, "productos", id), {
-                nombre,
-                coins,
-                imagen,
-                activo: true
+                tx.set(movRef, {
+                    tipo: "carga",
+                    fecha,
+                    coins
+                });
             });
 
-            const tr = document.createElement("tr");
-            tr.innerHTML = `
-                <td>${nombre}</td>
-                <td>${coins}</td>
-                <td><img src="${imagen}" width="50"></td>
-            `;
-            tablaProductosBody.appendChild(tr);
-
-            contador++;
+            procesados++;
         }
 
-        productosStatus.innerText = `🛒 Productos cargados: ${contador}`;
+        status.innerText = `✅ CSV procesado correctamente (${procesados} registros)`;
+        cargarHistorial();
     };
 
     reader.readAsText(file);
 });
+
+/* =====================================================
+   3️⃣ TABLA DE CANJES + DESCARGA CSV
+===================================================== */
+const tablaCanjes = document.getElementById("tablaCanjes");
+const btnDescargar = document.getElementById("descargarCanjes");
+
+async function cargarCanjes() {
+    tablaCanjes.innerHTML = "";
+    const usuariosSnap = await getDocs(collection(db, "usuarios"));
+
+    let dataCSV = [
+        ["Fecha","Cédula","Nombre","Producto","Coins"]
+    ];
+
+    for (const u of usuariosSnap.docs) {
+        const cedula = u.id;
+        const nombre = u.data().nombre;
+
+        const movSnap = await getDocs(
+            collection(db,"usuarios",cedula,"movimientos")
+        );
+
+        movSnap.forEach(m => {
+            const d = m.data();
+            if (d.tipo !== "canje") return;
+
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td>${d.fecha}</td>
+                <td>${cedula}</td>
+                <td>${nombre}</td>
+                <td>${d.producto}</td>
+                <td>${d.coins}</td>
+            `;
+            tablaCanjes.appendChild(tr);
+
+            dataCSV.push([
+                d.fecha, cedula, nombre, d.producto, d.coins
+            ]);
+        });
+    }
+
+    // descargar CSV
+    btnDescargar.onclick = () => {
+        const csv = dataCSV.map(r => r.join(",")).join("\n");
+        const blob = new Blob([csv], { type:"text/csv" });
+        const url = URL.createObjectURL(blob);
+
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "canjes_ajecoins.csv";
+        a.click();
+        URL.revokeObjectURL(url);
+    };
+}
+
+cargarCanjes();
