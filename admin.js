@@ -107,7 +107,7 @@ async function loadUsuarios() {
   }
 }
 
-// 🔹 Cargar productos
+// 🔹 Cargar productos con imagen
 async function loadProductos() {
   const table = document.getElementById("productos-body");
   table.innerHTML = "";
@@ -115,7 +115,11 @@ async function loadProductos() {
     const snapshot = await getDocs(collection(db, "productos"));
     snapshot.forEach(doc => {
       const p = doc.data();
+      // 🔹 Ruta relativa para GitHub Pages
+      const imgSrc = `assets/productos/${p.nombre}.png`;
+
       const row = `<tr>
+        <td><img src="${imgSrc}" alt="${p.nombre}" width="50" height="50"></td>
         <td>${p.nombre}</td>
         <td>${p.coins}</td>
       </tr>`;
