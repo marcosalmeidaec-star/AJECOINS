@@ -3,41 +3,51 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Mi Cuenta – AJE Coins</title>
+  <title>AJE Coins</title>
   <link rel="stylesheet" href="usuario.css"/>
   <script type="module" src="usuario.js" defer></script>
 </head>
 <body>
+  <header class="topBar">AJE Coins</header>
+
   <section id="login" class="card">
-    <h1>AJE Coins</h1>
-    <input id="cedulaInput" type="text" placeholder="Ingresa tu cédula" maxlength="10"/>
-    <button id="ingresarBtn">Ingresar</button>
+    <h2>Ingresa</h2>
+    <input id="cedulaInput" type="text" placeholder="Cédula" maxlength="10"/>
+    <button id="ingresarBtn">Entrar</button>
     <p id="errorMsg" class="error"></p>
   </section>
 
   <section id="cuenta" class="card hidden">
-    <h2>Mi tienda</h2>
-    <p id="coins" class="coins"></p>
+    <div class="saldoHead">
+      <span>Mis coins</span>
+      <strong id="coins">0</strong>
+    </div>
+
     <ul id="datos" class="datos"></ul>
 
+    <h3>Tienda</h3>
     <div id="productosTienda" class="tienda"></div>
 
     <h3>Carrito <span id="bolsa">0</span></h3>
     <ul id="carritoList" class="carrito"></ul>
 
     <button id="cerrarBtn">Cerrar</button>
-  </section>
 
-  <!-- MODAL + TOAST (sin onclick) -->
-  <div id="modalFin" class="modal hidden">
-    <div class="modal-content">
-      <h3>Resumen</h3>
-      <ul id="resumenList"></ul>
-      <p id="totalFin"></p>
-      <button id="btnConfirmar">Confirmar</button>
-      <button id="btnCancelar">Cancelar</button>
+    <!-- MODAL + TOAST -->
+    <div id="modalFin" class="modal hidden">
+      <div class="modal-content">
+        <h4>Resumen</h4>
+        <ul id="resumenList"></ul>
+        <p id="totalFin"></p>
+        <button id="btnConfirmar">Confirmar</button>
+        <button id="btnCancelar" class="sec">Cancelar</button>
+      </div>
     </div>
-  </div>
-  <div id="toast" class="toast hidden">✓ Compra realizada</div>
+    <div id="toast" class="toast hidden">✓ Compra realizada</div>
+
+    <!-- HISTORIAL PROPIO -->
+    <h3>Mi historial</h3>
+    <ul id="historialList" class="historial"></ul>
+  </section>
 </body>
 </html>
