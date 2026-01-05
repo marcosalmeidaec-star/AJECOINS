@@ -18,7 +18,42 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// ----- USUARIOS -----
+// ----------- CARGAR PRODUCTOS (solo nombres) -----------
+const productFileInput = document.getElementById("productFileInput");
+const uploadProductBtn = document.getElementById("uploadProductBtn");
+const productsBody = document.querySelector("#productsTable tbody");
+
+uploadProductBtn.addEventListener("click", async () => {
+  const file = productFileInput.files[0];
+  if (!file) return alert("Selecciona el CSV de productos");
+  const text = await file.text();
+  const lines = text.trim().split("\n");
+  for (const line of lines) {
+    const [producto, coins] = line.split(",");
+    await addDoc(collection(db, "productos"), {
+      producto: producto.trim(),
+      coins: parseInt(coins.trim(), 10)
+    });
+  }
+  alert("Productos cargados");
+  loadProducts();
+});
+
+async function loadProducts() {
+  productsBody.innerHTML = "";
+  const snap = await getDocs(collection(db, "productos"));
+  snap.forEach(d => {
+    const p = d.data();
+    productsBody.innerHTML += `
+      <tr>
+        <td>${p.producto}</td>
+        <td>—</td>
+        <td>${p.coins}</td>
+      </tr>`;
+  });
+}
+
+// ----------- CARGAR USUARIOS (opcional por ahora) -----------
 const fileInput = document.getElementById("fileInput");
 const uploadBtn = document.getElementById("uploadBtn");
 const usersBody = document.querySelector("#usersTable tbody");
@@ -58,41 +93,6 @@ async function loadUsers() {
   });
 }
 
-// ----- PRODUCTOS -----
-const productFileInput = document.getElementById("productFileInput");
-const uploadProductBtn = document.getElementById("uploadProductBtn");
-const productsBody = document.querySelector("#productsTable tbody");
-
-uploadProductBtn.addEventListener("click", async () => {
-  const file = productFileInput.files[0];
-  if (!file) return alert("Selecciona el CSV de productos");
-  const text = await file.text();
-  const lines = text.trim().split("\n").slice(1);
-  for (const line of lines) {
-    const [producto, coins] = line.split(",");
-    await addDoc(collection(db, "productos"), {
-      producto: producto.trim(),
-      coins: parseInt(coins.trim(), 10)
-    });
-  }
-  alert("Productos cargados");
-  loadProducts();
-});
-
-async function loadProducts() {
-  productsBody.innerHTML = "";
-  const snap = await getDocs(collection(db, "productos"));
-  snap.forEach(d => {
-    const p = d.data();
-    productsBody.innerHTML += `
-      <tr>
-        <td>${p.producto}</td>
-        <td><img src="assets/productos/${p.producto}.png" alt="${p.producto}" onerror="this.src='assets/productos/${p.producto}.jpg'"/></td>
-        <td>${p.coins}</td>
-      </tr>`;
-  });
-}
-
-// Cargar al iniciar
-loadUsers();
+// ----------- INICIAL --------
 loadProducts();
+loadUsers();
