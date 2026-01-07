@@ -173,3 +173,4 @@ function exportarComprasCSV(){
 loadProducts();
 loadUsers();
 loadCompras();
+
