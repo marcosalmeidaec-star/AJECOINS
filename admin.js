@@ -15,7 +15,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// ----------- USUARIOS (PUNTO Y COMA + BORRA POR FECHA + LOGS) -----------
+// ----------- USUARIOS (COMMAS + BORRA SOLO SI FECHA REPETIDA) -----------
 const fileInput = document.getElementById("fileInput");
 const uploadBtn = document.getElementById("uploadBtn");
 const usersBody = document.querySelector("#usersTable tbody");
@@ -25,27 +25,20 @@ uploadBtn.addEventListener("click", async () => {
   if (!file) return alert("Selecciona el CSV de usuarios");
 
   const text = await file.text();
-  console.log("Texto leído:", text.slice(0, 300)); // primeros 300 caracteres
-
   const lines = text.trim().split("\n").slice(1); // salta encabezado
-  console.log("Total líneas:", lines.length);
 
-  // 1. Busca la PRIMERA línea VÁLIDA (por punto y coma)
+  // 1. Toma la fecha del PRIMER registro válido (por comas)
   let targetDate = "";
   for (let i = 0; i < lines.length; i++) {
-    const p = lines[i].trim().split(";");
-    console.log(`Línea ${i}:`, p);
+    const p = lines[i].trim().split(",");
     if (p.length >= 5 && p[0].trim() !== "" && p[1].trim() !== "") {
       targetDate = p[0].trim();
       break;
     }
   }
-  if (!targetDate) {
-    alert("No hay registros válidos (asegúrate de 5 columnas con fecha y cédula)");
-    return;
-  }
+  if (!targetDate) return alert("No hay registros válidos (asegúrate de 5 columnas con fecha y cédula)");
 
-  // 2. BORRA TODOS los documentos de esa fecha
+  // 2. BORRA SOLO si esa fecha YA existe (no toca otras fechas)
   const q = query(collection(db, "usuarios"), where("fecha", "==", targetDate));
   const snap = await getDocs(q);
   let deleted = 0;
@@ -55,14 +48,12 @@ uploadBtn.addEventListener("click", async () => {
   }
   console.log("Borrados por fecha", targetDate, ":", deleted);
 
-  // 3. SUBE líneas VÁLIDAS (por punto y coma, 5 columnas, fecha/cedula no vacías)
+  // 3. SUBE TODAS las líneas válidas (con 5 columnas y fecha/cedula no vacías)
   let created = 0;
   for (const line of lines) {
-    const parts = line.trim().split(";");
-    if (parts.length < 5 || parts[0].trim() === "" || parts[1].trim() === "") {
-      console.warn("Saltando línea inválida:", line);
-      continue;
-    }
+    const parts = line.trim().split(",");
+    if (parts.length < 5 || parts[0].trim() === "" || parts[1].trim() === "") continue;
+
     const [fecha, cedula, nombre, cedis, coins_ganados] = parts;
     const docId = cedula.trim();
     await setDoc(doc(db, "usuarios", docId), {
@@ -76,7 +67,7 @@ uploadBtn.addEventListener("click", async () => {
     console.log("Creado:", docId);
   }
 
-  alert(`Usuarios de ${targetDate} actualizados (${created} registros)`);
+  alert(`Usuarios de ${targetDate} procesados (${created} registros)`);
   loadUsers();
 });
 
