@@ -15,7 +15,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// ----------- USUARIOS -----------
+// ----------- USUARIOS (sobrescribe por cédula) -----------
 const fileInput = document.getElementById("fileInput");
 const uploadBtn = document.getElementById("uploadBtn");
 const usersBody = document.querySelector("#usersTable tbody");
@@ -24,10 +24,13 @@ uploadBtn.addEventListener("click", async () => {
   const file = fileInput.files[0];
   if (!file) return alert("Selecciona el CSV de usuarios");
   const text = await file.text();
-  const lines = text.trim().split("\n").slice(1);
+  const lines = text.trim().split("\n").slice(1); // salta encabezado
   for (const line of lines) {
-    const [fecha, cedula, nombre, cedis, coins_ganados] = line.split(",");
-    await addDoc(collection(db, "usuarios"), {
+    const parts = line.trim().split(",");
+    if (parts.length < 5) continue; // línea incompleta
+    const [fecha, cedula, nombre, cedis, coins_ganados] = parts;
+    const docId = cedula.trim(); // <-- usamos cédula como ID
+    await setDoc(doc(db, "usuarios", docId), {
       fecha: fecha.trim(),
       cedula: cedula.trim(),
       nombre: nombre.trim(),
@@ -35,15 +38,18 @@ uploadBtn.addEventListener("click", async () => {
       coins_ganados: parseInt(coins_ganados.trim(), 10)
     });
   }
-  alert("Usuarios cargados");
+  alert("Usuarios actualizados / añadidos");
   loadUsers();
 });
 
 async function loadUsers() {
   usersBody.innerHTML = "";
   const snap = await getDocs(collection(db, "usuarios"));
-  snap.forEach(d => {
-    const u = d.data();
+  const usuarios = [];
+  snap.forEach(d => usuarios.push(d.data()));
+  // orden cronológico
+  usuarios.sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
+  usuarios.forEach(u => {
     usersBody.innerHTML += `
       <tr>
         <td>${u.fecha}</td>
