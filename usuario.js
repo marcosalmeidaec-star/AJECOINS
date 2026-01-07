@@ -80,4 +80,113 @@ function mostrarDatos(u) {
 
 async function cargarProductos() {
   tiendaDiv.innerHTML = '<div class="spinner"></div>';
-  const snap = await get
+  const snap = await getDocs(collection(db, 'productos'));
+  tiendaDiv.innerHTML = '';
+  snap.forEach(doc => {
+    const p = doc.data();
+    const tarj = document.createElement('div');
+    tarj.className = 'tarjeta';
+
+    const img = document.createElement('img');
+    img.src = `assets/productos/${p.producto}.png`;
+    img.onerror = () => img.src = `assets/productos/${p.producto}.jpg`;
+
+    const h4 = document.createElement('h4');
+    h4.textContent = p.producto;
+
+    const precioDiv = document.createElement('div');
+    precioDiv.className = 'precio';
+    precioDiv.textContent = `${p.coins} coins`;
+
+    const btn = document.createElement('button');
+    btn.textContent = 'Agregar';
+    btn.onclick = () => agregarAlCarrito(p.producto, p.coins);
+
+    tarj.append(img, h4, precioDiv, btn);
+    tiendaDiv.appendChild(tarj);
+  });
+}
+
+async function cargarHistorial() {
+  historialList.innerHTML = '';
+  const q = query(collection(db, 'compras'), where('cedula', '==', userCed));
+  const snap = await getDocs(q);
+  if (snap.empty) {
+    historialList.innerHTML = '<li style="text-align:center;color:#777;">Sin compras</li>';
+    return;
+  }
+  snap.forEach(doc => {
+    const c = doc.data();
+    const fecha = c.fecha?.toDate().toLocaleString('es-EC') || '-';
+    const productos = c.items.map(i => i.nombre).join(', ');
+    const li = document.createElement('li');
+    li.innerHTML = `<span>${fecha}</span><span>${productos}</span><span>${c.total} c</span>`;
+    historialList.appendChild(li);
+  });
+}
+
+function agregarAlCarrito(nombre, precio) {
+  if (coinsUsuario < precio) return alert('No tienes coins suficientes');
+  carrito.push({nombre, precio});
+  actualizarCarrito();
+}
+
+function actualizarCarrito() {
+  carritoList.innerHTML = '';
+  let total = 0;
+  carrito.forEach(item => {
+    total += item.precio;
+    carritoList.innerHTML += `<li>${item.nombre} <span>${item.precio} c</span></li>`;
+  });
+  bolsaSpan.textContent = `${carrito.length} · ${total} c`;
+
+  if (carrito.length && !document.getElementById('btnFin')) {
+    const btn = document.createElement('button');
+    btn.id = 'btnFin';
+    btn.textContent = 'Finalizar compra';
+    btn.onclick = abrirModal;
+    carritoList.after(btn);
+  }
+  if (!carrito.length) document.getElementById('btnFin')?.remove();
+}
+
+// ---------- MODAL ----------
+function abrirModal(){
+  const total = carrito.reduce((t,i)=>t+i.precio,0);
+  document.getElementById('totalFin').textContent = `Total: ${total} coins`;
+  document.getElementById('resumenList').innerHTML = carrito.map(i=>`<li>${i.nombre} · ${i.precio} c</li>`).join('');
+  document.getElementById('modalFin').classList.remove('hidden');
+}
+function cerrarModal(){
+  document.getElementById('modalFin').classList.add('hidden');
+}
+async function confirmarCompra(){
+  const total = carrito.reduce((t,i)=>t+i.precio,0);
+  if (total > coinsUsuario) return alert('Fondos insuficientes');
+
+  const nuevoSaldo = coinsUsuario - total;
+  await updateDoc(doc(db, 'usuarios', userId), { coins_ganados: nuevoSaldo });
+
+  await addDoc(collection(db, 'compras'), {
+    cedula: userCed,
+    nombre: datosUl.querySelector('li:nth-child(3)').textContent.replace('Nombre: ',''),
+    cedis:  datosUl.querySelector('li:nth-child(4)').textContent.replace('Cedis: ',''),
+    items:  carrito,
+    total:  total,
+    fecha:  serverTimestamp()
+  });
+
+  coinsUsuario = nuevoSaldo;
+  coinsP.textContent = coinsUsuario;
+  carrito = [];
+  actualizarCarrito();
+  cerrarModal();
+  mostrarToast();
+  cargarHistorial(); // <-- recarga historial tras compra
+}
+
+function mostrarToast(){
+  const t = document.getElementById('toast');
+  t.classList.remove('hidden');
+  setTimeout(()=>t.classList.add('hidden'),2000);
+}
