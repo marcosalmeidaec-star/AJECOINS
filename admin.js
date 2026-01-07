@@ -15,7 +15,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// ----------- USUARIOS (sobrescribe por cédula) -----------
+// ----------- USUARIOS (BORRA + CREA con la misma cédula) -----------
 const fileInput = document.getElementById("fileInput");
 const uploadBtn = document.getElementById("uploadBtn");
 const usersBody = document.querySelector("#usersTable tbody");
@@ -27,9 +27,18 @@ uploadBtn.addEventListener("click", async () => {
   const lines = text.trim().split("\n").slice(1); // salta encabezado
   for (const line of lines) {
     const parts = line.trim().split(",");
-    if (parts.length < 5) continue; // línea incompleta
+    if (parts.length < 5) {
+      console.warn("Línea incompleta:", line);
+      continue;
+    }
     const [fecha, cedula, nombre, cedis, coins_ganados] = parts;
     const docId = cedula.trim(); // <-- usamos cédula como ID
+
+    // 1. BORRA el documento viejo (si existe)
+    await deleteDoc(doc(db, "usuarios", docId)).catch(() => {});
+    console.log("Borrado (o no existía):", docId);
+
+    // 2. CREA el nuevo (sobrescribe)
     await setDoc(doc(db, "usuarios", docId), {
       fecha: fecha.trim(),
       cedula: cedula.trim(),
@@ -37,8 +46,9 @@ uploadBtn.addEventListener("click", async () => {
       cedis: cedis.trim(),
       coins_ganados: parseInt(coins_ganados.trim(), 10)
     });
+    console.log("Creado / sobrescrito:", docId);
   }
-  alert("Usuarios actualizados / añadidos");
+  alert("Usuarios sobrescritos / añadidos");
   loadUsers();
 });
 
