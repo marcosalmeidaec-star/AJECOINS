@@ -1,23 +1,8 @@
-olvidalo pegue este codigo 
-
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js ";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
 import {
-  getFirestore, collection, addDoc, getDocs, setDoc, doc, deleteDoc, query, where
-} from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js ";
-
-const firebaseConfig = {
-  apiKey: "AIzaSyCsz2EP8IsTlG02uU2_GRfyQeeajMDuJjI",
-  authDomain: "ajecoins-73829.firebaseapp.com",
-  projectId: "ajecoins-73829",
-  storageBucket: "ajecoins-73829.firebasestorage.app",
-  messagingSenderId: "247461322350",
-  appId: "1:247461322350:web:802185ad39249ca650507f"
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-
-// ----------- USUARIOS (PUNTO Y COMA + BORRA POR FECHA + LOGS) -----------
+  getFirestore, collection, addDoc, getDocs, setDoc, doc, query, where
+} from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firebase-firestore.js";
+// ----------- USUARIOS (CADA REGISTRO INDIVIDUAL, acumula histórico) -----------
 const fileInput = document.getElementById("fileInput");
 const uploadBtn = document.getElementById("uploadBtn");
 const usersBody = document.querySelector("#usersTable tbody");
@@ -27,46 +12,20 @@ uploadBtn.addEventListener("click", async () => {
   if (!file) return alert("Selecciona el CSV de usuarios");
 
   const text = await file.text();
-  console.log("Texto leído:", text.slice(0, 300)); // primeros 300 caracteres
-
   const lines = text.trim().split("\n").slice(1); // salta encabezado
-  console.log("Total líneas:", lines.length);
 
-  // 1. Busca la PRIMERA línea VÁLIDA (por punto y coma)
-  let targetDate = "";
-  for (let i = 0; i < lines.length; i++) {
-    const p = lines[i].trim().split(";");
-    console.log(`Línea ${i}:`, p);
-    if (p.length >= 5 && p[0].trim() !== "" && p[1].trim() !== "") {
-      targetDate = p[0].trim();
-      break;
-    }
-  }
-  if (!targetDate) {
-    alert("No hay registros válidos (asegúrate de 5 columnas con fecha y cédula)");
-    return;
-  }
+  let totalProcesados = 0;
 
-  // 2. BORRA TODOS los documentos de esa fecha
-  const q = query(collection(db, "usuarios"), where("fecha", "==", targetDate));
-  const snap = await getDocs(q);
-  let deleted = 0;
-  for (const docSnap of snap.docs) {
-    await deleteDoc(doc(db, "usuarios", docSnap.id));
-    deleted++;
-  }
-  console.log("Borrados por fecha", targetDate, ":", deleted);
-
-  // 3. SUBE líneas VÁLIDAS (por punto y coma, 5 columnas, fecha/cedula no vacías)
-  let created = 0;
+  // PROCESA CADA LÍNEA INDIVIDUALMENTE
   for (const line of lines) {
     const parts = line.trim().split(";");
-    if (parts.length < 5 || parts[0].trim() === "" || parts[1].trim() === "") {
-      console.warn("Saltando línea inválida:", line);
-      continue;
-    }
+    if (parts.length < 5 || parts[0].trim() === "" || parts[1].trim() === "") continue;
+
     const [fecha, cedula, nombre, cedis, coins_ganados] = parts;
-    const docId = cedula.trim();
+
+    // ID único: FECHA + CÉDULA (permite misma cédula en distinta fecha)
+    const docId = `${fecha.trim()}_${cedula.trim()}`;
+
     await setDoc(doc(db, "usuarios", docId), {
       fecha: fecha.trim(),
       cedula: cedula.trim(),
@@ -74,22 +33,26 @@ uploadBtn.addEventListener("click", async () => {
       cedis: cedis.trim(),
       coins_ganados: parseInt(coins_ganados.trim(), 10)
     });
-    created++;
-    console.log("Creado:", docId);
+    totalProcesados++;
   }
 
-  alert(`Usuarios de ${targetDate} actualizados (${created} registros)`);
+  alert(`Total de registros procesados: ${totalProcesados}`);
   loadUsers();
-});
+}
 
 async function loadUsers() {
   usersBody.innerHTML = "";
+  console.log("Reflejando usuarios...");
+
   const snap = await getDocs(collection(db, "usuarios"));
-  const usuarios = [];
-  snap.forEach(d => usuarios.push(d.data()));
+  const registros = [];
+  snap.forEach(d => registros.push(d.data()));
+
   // orden cronológico
-  usuarios.sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
-  usuarios.forEach(u => {
+  registros.sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
+
+  let totalFilas = 0;
+  registros.forEach(u => {
     usersBody.innerHTML += `
       <tr>
         <td>${u.fecha}</td>
@@ -98,7 +61,10 @@ async function loadUsers() {
         <td>${u.cedis}</td>
         <td>${u.coins_ganados}</td>
       </tr>`;
+    totalFilas++;
   });
+
+  console.log("Total filas reflejadas:", totalFilas);
 }
 
 // ----------- PRODUCTOS -----------
@@ -125,7 +91,7 @@ uploadProductBtn.addEventListener("click", async () => {
   }
   alert("Productos cargados");
   loadProducts();
-});
+}
 
 async function loadProducts() {
   productsBody.innerHTML = "";
