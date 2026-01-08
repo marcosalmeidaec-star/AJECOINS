@@ -9,7 +9,7 @@ const firebaseConfig = {
   projectId: "ajecoins-73829",
   storageBucket: "ajecoins-73829.firebasestorage.app",
   messagingSenderId: "247461322350",
-  appId: "1:247261322350:web:802185ad39249ca650507f"
+  appId: "1:247461322350:web:802185ad39249ca650507f"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -32,7 +32,6 @@ const historialList = document.getElementById('historialList');
 // ---------- VARIABLES ----------
 let coinsUsuario = 0;
 let carrito = [];
-let userId = '';
 let userCed = '';
 
 // ---------- EVENTOS ----------
@@ -46,7 +45,7 @@ async function buscarUsuario() {
   const ced = cedulaInput.value.trim();
   if (!ced) { errorMsg.textContent = 'Escribe tu cédula'; return; }
 
-  const q = query(collection(db, 'usuarios'), where('cedula', '==', ced));
+  const q = query(collection(db, 'usuariosPorFecha'), where('cedula', '==', ced));
   const snap = await getDocs(q);
 
   if (snap.empty) {
@@ -54,12 +53,34 @@ async function buscarUsuario() {
     return;
   }
 
-  const docSnap = snap.docs[0];
-  userId = docSnap.id;
-  userCed = ced; // <-- GUARDAMOS CÉDULA PRIMERO
-  const user = docSnap.data();
-  mostrarDatos(user);
-  cargarHistorial(); // <-- AHORA SÍ TENEMOS CÉDULA
+  // Sumamos coins y tomamos la fecha más reciente
+  let totalCoins = 0;
+  let fechaMasReciente = '';
+  let nombre = '';
+  let cedis  = '';
+
+  snap.forEach(doc => {
+    const data = doc.data();
+    totalCoins += data.coins_ganados;
+    if (!fechaMasReciente || new Date(data.fecha) > new Date(fechaMasReciente)) {
+      fechaMasReciente = data.fecha;
+      nombre = data.nombre;
+      cedis  = data.cedis;
+    }
+  });
+
+  userCed = ced;
+  coinsUsuario = totalCoins;
+
+  mostrarDatos({
+    fecha: fechaMasReciente,
+    cedula: ced,
+    nombre: nombre,
+    cedis: cedis,
+    coins_ganados: totalCoins
+  });
+
+  cargarHistorial();
 }
 
 function mostrarDatos(u) {
@@ -73,7 +94,6 @@ function mostrarDatos(u) {
     <li><strong>Cedis:</strong> ${u.cedis}</li>
   `;
 
-  coinsUsuario = u.coins_ganados;
   coinsP.textContent = coinsUsuario;
   cargarProductos();
 }
@@ -127,7 +147,7 @@ async function cargarHistorial() {
 
 function agregarAlCarrito(nombre, precio) {
   if (coinsUsuario < precio) return alert('No tienes coins suficientes');
-  carrito.push({nombre, precio});
+  carrito.push({ nombre, precio });
   actualizarCarrito();
 }
 
@@ -151,42 +171,68 @@ function actualizarCarrito() {
 }
 
 // ---------- MODAL ----------
-function abrirModal(){
-  const total = carrito.reduce((t,i)=>t+i.precio,0);
+function abrirModal() {
+  const total = carrito.reduce((t, i) => t + i.precio, 0);
   document.getElementById('totalFin').textContent = `Total: ${total} coins`;
-  document.getElementById('resumenList').innerHTML = carrito.map(i=>`<li>${i.nombre} · ${i.precio} c</li>`).join('');
+  document.getElementById('resumenList').innerHTML = carrito.map(i => `<li>${i.nombre} · ${i.precio} c</li>`).join('');
   document.getElementById('modalFin').classList.remove('hidden');
 }
-function cerrarModal(){
+function cerrarModal() {
   document.getElementById('modalFin').classList.add('hidden');
 }
-async function confirmarCompra(){
-  const total = carrito.reduce((t,i)=>t+i.precio,0);
+
+// ---------- COMPRA: DESCUENTA DE TODAS LAS FECHAS ----------
+async function confirmarCompra() {
+  const total = carrito.reduce((t, i) => t + i.precio, 0);
   if (total > coinsUsuario) return alert('Fondos insuficientes');
 
-  const nuevoSaldo = coinsUsuario - total;
-  await updateDoc(doc(db, 'usuarios', userId), { coins_ganados: nuevoSaldo });
+  // 1. Traer todos los docs de la cédula, ordenados fecha DESC
+  const q = query(
+    collection(db, 'usuariosPorFecha'),
+    where('cedula', '==', userCed),
+    where('coins_ganados', '>', 0)
+  );
+  const snap = await getDocs(q);
+  const docs = [];
+  snap.forEach(d => docs.push({ id: d.id, ...d.data() }));
+  docs.sort((a, b) => new Date(b.fecha) - new Date(a.fecha)); // más reciente primero
 
+  // 2. Descontar proporcionalmente
+  let restante = total;
+  for (const doc of docs) {
+    if (restante <= 0) break;
+    const disponible = doc.coins_ganados;
+    const aDescontar = Math.min(disponible, restante);
+
+    await updateDoc(doc(db, 'usuariosPorFecha', doc.id), {
+      coins_ganados: disponible - aDescontar
+    });
+
+    restante -= aDescontar;
+  }
+
+  // 3. Guardar la compra
   await addDoc(collection(db, 'compras'), {
     cedula: userCed,
-    nombre: datosUl.querySelector('li:nth-child(3)').textContent.replace('Nombre: ',''),
-    cedis:  datosUl.querySelector('li:nth-child(4)').textContent.replace('Cedis: ',''),
-    items:  carrito,
-    total:  total,
-    fecha:  serverTimestamp()
+    nombre: datosUl.querySelector('li:nth-child(3)').textContent.replace('Nombre: ', ''),
+    cedis: datosUl.querySelector('li:nth-child(4)').textContent.replace('Cedis: ', ''),
+    items: carrito,
+    total: total,
+    fecha: serverTimestamp()
   });
 
-  coinsUsuario = nuevoSaldo;
+  // 4. Actualizar UI
+  coinsUsuario -= total;
   coinsP.textContent = coinsUsuario;
   carrito = [];
   actualizarCarrito();
   cerrarModal();
   mostrarToast();
-  cargarHistorial(); // <-- recarga historial tras compra
+  cargarHistorial();
 }
 
-function mostrarToast(){
+function mostrarToast() {
   const t = document.getElementById('toast');
   t.classList.remove('hidden');
-  setTimeout(()=>t.classList.add('hidden'),2000);
+  setTimeout(() => t.classList.add('hidden'), 2000);
 }
