@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
 import {
-  getFirestore, collection, addDoc, getDocs, setDoc, doc, deleteDoc, query, where
+  getFirestore, collection, getDocs, setDoc, doc, deleteDoc, query, where
 } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -16,9 +16,12 @@ const app = initializeApp(firebaseConfig);
 const db  = getFirestore(app);
 
 // ----------- USUARIOS  (colección usuariosPorFecha) -----------
-const fileInput = document.getElementById("fileInput");
-const uploadBtn = document.getElementById("uploadBtn");
-const usersBody = document.querySelector("#usersTable tbody");
+const fileInput   = document.getElementById("fileInput");
+const uploadBtn   = document.getElementById("uploadBtn");
+const usersBody   = document.querySelector("#usersTable tbody");
+const filtroFecha = document.getElementById("filtroFecha");
+const btnFiltrar  = document.getElementById("btnFiltrar");
+const btnVerTodo  = document.getElementById("btnVerTodo");
 
 function pintarTablaUsuarios(lista) {
   usersBody.innerHTML = lista
@@ -33,11 +36,37 @@ function pintarTablaUsuarios(lista) {
       </tr>`).join("");
 }
 
+// Cargar usuarios: si se pasa una fecha, filtra por ella
+async function loadUsers(fecha = null) {
+  console.log("loadUsers() ejecutándose con fecha:", fecha);
+  let q = collection(db, "usuariosPorFecha");
+  if (fecha) q = query(q, where("fecha", "==", fecha));
+
+  const snap = await getDocs(q);
+  const usuarios = [];
+  snap.forEach(d => usuarios.push(d.data()));
+  console.log("Registros obtenidos:", usuarios.length);
+  pintarTablaUsuarios(usuarios);
+}
+
+// Eventos de filtro
+btnFiltrar.addEventListener("click", () => {
+  const fecha = filtroFecha.value;
+  if (!fecha) return alert("Selecciona una fecha");
+  loadUsers(fecha);
+});
+
+btnVerTodo.addEventListener("click", () => {
+  filtroFecha.value = "";
+  loadUsers();
+});
+
+// Subida de archivo
 uploadBtn.addEventListener("click", async () => {
   const file = fileInput.files[0];
   if (!file) return alert("Selecciona el CSV de usuarios");
 
-  const text  = await file.text();
+  const text = await file.text();
   const lines = text.trim().split("\n").slice(1);
 
   const fechasEnArchivo = new Set();
@@ -80,13 +109,6 @@ uploadBtn.addEventListener("click", async () => {
   pintarTablaUsuarios(subidos);
   alert(`Archivo procesado: ${subidos.length} registros (${fechasEnArchivo.size} fechas)`);
 });
-
-async function loadUsers() {
-  const snap = await getDocs(collection(db, "usuariosPorFecha"));
-  const usuarios = [];
-  snap.forEach(d => usuarios.push(d.data()));
-  pintarTablaUsuarios(usuarios);
-}
 
 // ----------- EXPORTAR USUARIOS -----------
 function exportarUsuariosCSV() {
@@ -189,6 +211,5 @@ loadProducts();
 loadUsers();
 loadCompras();
 
-// botón exportar usuarios (agrega el botón en admin.html con id="btnExportUsers")
 const btnExportUsers = document.getElementById('btnExportUsers');
 if (btnExportUsers) btnExportUsers.addEventListener('click', exportarUsuariosCSV);
