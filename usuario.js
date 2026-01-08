@@ -202,33 +202,32 @@ function cerrarModal() {
   document.getElementById('modalFin').classList.add('hidden');
 }
 
-// ---------- COMPRA: DESCUENTA DE TODAS LAS FECHAS ----------
+// ---------- COMPRA: DESCUENTA DE TODAS LAS FECHAS (SIN ÍNDICE) ----------
 async function confirmarCompra() {
   const total = carrito.reduce((t, i) => t + i.precio, 0);
   if (total > coinsUsuario) return alert('Fondos insuficientes');
 
-  // 1. Traer todos los docs de la cédula, ordenados fecha DESC
+  // 1. Traer todos los docs de la cédula (sin índice)
   const q = query(
     collection(db, 'usuariosPorFecha'),
-    where('cedula', '==', userCed),
-    where('coins_ganados', '>', 0)
+    where('cedula', '==', userCed)
   );
   const snap = await getDocs(q);
   const docs = [];
   snap.forEach(d => docs.push({ id: d.id, ...d.data() }));
   docs.sort((a, b) => new Date(b.fecha) - new Date(a.fecha)); // más reciente primero
 
-  // 2. Descontar proporcionalmente
+  // 2. Descontar proporcionalmente (saltando los que ya están en 0)
   let restante = total;
   for (const doc of docs) {
     if (restante <= 0) break;
     const disponible = doc.coins_ganados;
-    const aDescontar = Math.min(disponible, restante);
+    if (disponible <= 0) continue; // <-- evitamos negativos y sin índice
 
+    const aDescontar = Math.min(disponible, restante);
     await updateDoc(doc(db, 'usuariosPorFecha', doc.id), {
       coins_ganados: disponible - aDescontar
     });
-
     restante -= aDescontar;
   }
 
