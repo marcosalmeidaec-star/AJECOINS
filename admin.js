@@ -13,7 +13,14 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-const db  = getFirestore(app);
+const db = getFirestore(app);
+
+// ----------- FUNCIONES AUXILIARES -----------
+// Convierte "1/1/2025" → "2025-01-01"
+function normalizarFecha(fecha) {
+  const [d, m, y] = fecha.split("/");
+  return `${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`;
+}
 
 // ----------- USUARIOS  (colección usuariosPorFecha) -----------
 const fileInput   = document.getElementById("fileInput");
@@ -66,7 +73,7 @@ uploadBtn.addEventListener("click", async () => {
   const file = fileInput.files[0];
   if (!file) return alert("Selecciona el CSV de usuarios");
 
-  const text = await file.text();
+  const text  = await file.text();
   const lines = text.trim().split("\n").slice(1);
 
   const fechasEnArchivo = new Set();
@@ -81,7 +88,8 @@ uploadBtn.addEventListener("click", async () => {
 
   // Borrar solo las fechas que vienen en el archivo
   for (const fecha of fechasEnArchivo) {
-    const q = query(collection(db, "usuariosPorFecha"), where("fecha", "==", fecha));
+    const fechaNormalizada = normalizarFecha(fecha);
+    const q = query(collection(db, "usuariosPorFecha"), where("fecha", "==", fechaNormalizada));
     const snap = await getDocs(q);
     for (const docSnap of snap.docs) {
       await deleteDoc(doc(db, "usuariosPorFecha", docSnap.id));
@@ -93,7 +101,8 @@ uploadBtn.addEventListener("click", async () => {
   for (const line of lines) {
     const parts = line.trim().split(";");
     if (parts.length < 5 || parts[0].trim() === "" || parts[1].trim() === "") continue;
-    const [fecha, cedula, nombre, cedis, coins_ganados] = parts.map(x => x.trim());
+    const [fechaRaw, cedula, nombre, cedis, coins_ganados] = parts.map(x => x.trim());
+    const fecha = normalizarFecha(fechaRaw);
     const docId = `${fecha}_${cedula}`;
     const reg = {
       fecha,
