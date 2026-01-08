@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
 import {
-  getFirestore, collection, addDoc, getDocs, setDoc, doc, query, where
+  getFirestore, collection, addDoc, getDocs, setDoc, doc, deleteDoc, query, where
 } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -13,9 +13,9 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+const db  = getFirestore(app);
 
-// ----------- USUARIOS (CADA REGISTRO INDIVIDUAL, histórico por fecha) -----------
+// ----------- USUARIOS  NUEVA LÓGICA  “usuariosPorFecha” -----------
 const fileInput = document.getElementById("fileInput");
 const uploadBtn = document.getElementById("uploadBtn");
 const usersBody = document.querySelector("#usersTable tbody");
@@ -24,48 +24,60 @@ uploadBtn.addEventListener("click", async () => {
   const file = fileInput.files[0];
   if (!file) return alert("Selecciona el CSV de usuarios");
 
-  const text = await file.text();
-  const lines = text.trim().split("\n").slice(1); // salta encabezado
+  const text  = await file.text();
+  const lines = text.trim().split("\n").slice(1);   // saltar encabezado
 
-  let totalProcesados = 0;
+  // 1. Detectar todas las fechas que VIENEN en este archivo
+  const fechasEnArchivo = new Set();
+  for (const line of lines) {
+    const p = line.trim().split(";");
+    if (p.length >= 5 && p[0].trim() && p[1].trim()) fechasEnArchivo.add(p[0].trim());
+  }
+  if (fechasEnArchivo.size === 0) {
+    alert("No hay registros válidos (asegúrate de 5 columnas con fecha y cédula)");
+    return;
+  }
 
-  // PROCESA CADA LÍNEA INDIVIDUALMENTE
+  // 2. Borrar SOLAMENTE los documentos cuya fecha esté en el archivo
+  for (const fecha of fechasEnArchivo) {
+    const q   = query(collection(db, "usuariosPorFecha"), where("fecha", "==", fecha));
+    const snap = await getDocs(q);
+    for (const docSnap of snap.docs) {
+      await deleteDoc(doc(db, "usuariosPorFecha", docSnap.id));
+    }
+    console.log(`Registros de ${fecha} borrados previamente`);
+  }
+
+  // 3. Subir todas las líneas válidas (fecha + cédula = id único)
+  let creados = 0;
   for (const line of lines) {
     const parts = line.trim().split(";");
     if (parts.length < 5 || parts[0].trim() === "" || parts[1].trim() === "") continue;
 
-    const [fecha, cedula, nombre, cedis, coins_ganados] = parts;
-
-    // ID único: FECHA + CÉDULA (permite misma cédula en distinta fecha)
-    const docId = `${fecha.trim()}_${cedula.trim()}`;
-
-    await setDoc(doc(db, "usuarios", docId), {
-      fecha: fecha.trim(),
-      cedula: cedula.trim(),
-      nombre: nombre.trim(),
-      cedis: cedis.trim(),
-      coins_ganados: parseInt(coins_ganados.trim(), 10)
+    const [fecha, cedula, nombre, cedis, coins_ganados] = parts.map(x => x.trim());
+    const docId = `${fecha}_${cedula}`;          // ID compuesto
+    await setDoc(doc(db, "usuariosPorFecha", docId), {
+      fecha,
+      cedula,
+      nombre,
+      cedis,
+      coins_ganados: parseInt(coins_ganados, 10)
     });
-    totalProcesados++;
+    creados++;
   }
 
-  alert(`Total de registros procesados: ${totalProcesados}`);
+  alert(`Archivo procesado: ${creados} registros (${fechasEnArchivo.size} fechas)`);
   loadUsers();
-}
+});
 
 async function loadUsers() {
   usersBody.innerHTML = "";
-  console.log("Reflejando usuarios...");
-
-  const snap = await getDocs(collection(db, "usuarios"));
-  const registros = [];
-  snap.forEach(d => registros.push(d.data()));
-
-  // orden cronológico
-  registros.sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
-
-  let totalFilas = 0;
-  registros.forEach(u => {
+  const snap = await getDocs(collection(db, "usuariosPorFecha"));
+  const usuarios = [];
+  snap.forEach(d => usuarios.push(d.data()));
+  // ordenar cronológico
+  usuarios.sort((a, b) => new Date(a.fecha) - new Date(b.fecha) || a.cedula.localeCompare(b.cedula));
+  usuarios.forEach(u => {
     usersBody.innerHTML += `
       <tr>
         <td>${u.fecha}</td>
@@ -74,10 +86,7 @@ async function loadUsers() {
         <td>${u.cedis}</td>
         <td>${u.coins_ganados}</td>
       </tr>`;
-    totalFilas++;
   });
-
-  console.log("Total filas reflejadas:", totalFilas);
 }
 
 // ----------- PRODUCTOS -----------
@@ -104,7 +113,7 @@ uploadProductBtn.addEventListener("click", async () => {
   }
   alert("Productos cargados");
   loadProducts();
-}
+});
 
 async function loadProducts() {
   productsBody.innerHTML = "";
