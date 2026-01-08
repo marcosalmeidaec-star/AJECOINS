@@ -219,17 +219,17 @@ async function confirmarCompra() {
 
   // 2. Descontar proporcionalmente (saltando los que ya están en 0)
   let restante = total;
-  for (const doc of docs) {
-    if (restante <= 0) break;
-    const disponible = doc.coins_ganados;
-    if (disponible <= 0) continue; // <-- evitamos negativos y sin índice
+  for (const docData of docs) { // ✅ cambiamos el nombre
+  if (restante <= 0) break;
+  const disponible = docData.coins_ganados;
+  if (disponible <= 0) continue;
 
-    const aDescontar = Math.min(disponible, restante);
-    await updateDoc(doc(db, 'usuariosPorFecha', doc.id), {
-      coins_ganados: disponible - aDescontar
-    });
-    restante -= aDescontar;
-  }
+  const aDescontar = Math.min(disponible, restante);
+  await updateDoc(doc(db, 'usuariosPorFecha', docData.id), { // ✅ ahora sí funciona
+    coins_ganados: disponible - aDescontar
+  });
+  restante -= aDescontar;
+}
 
   // 3. Guardar la compra
   await addDoc(collection(db, 'compras'), {
