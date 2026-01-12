@@ -98,5 +98,24 @@
     </table>
     <button id="cerrarDetalle">Cerrar</button>
   </dialog>
+
+  <!-- MOVIMIENTOS POR USUARIO (CRONOLÓGICO) -->
+  <section>
+    <h2>Movimientos por usuario</h2>
+    <label>Cédula: <input type="text" id="movCedula" placeholder="932064983" /></label>
+    <button id="btnVerMov">Ver movimientos</button>
+    <button id="btnExportMov" class="btn btn-secondary">Exportar CSV</button>
+    <table id="movTable">
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>Concepto</th>
+          <th>Coins</th>
+          <th>Saldo</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </section>
 </body>
 </html>
