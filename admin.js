@@ -215,7 +215,7 @@ async function cargarMovimientos(cedula) {
       concepto: `Canje: ${productos}`,
       coins: c.total,
       signo: -1
-    });
+    ]);
   });
 
   // 3. Ordenar y calcular saldo (sin tocar el original)
