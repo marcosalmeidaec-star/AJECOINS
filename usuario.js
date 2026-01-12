@@ -1,7 +1,7 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js ";
 import {
   getFirestore, collection, query, where, getDocs, updateDoc, doc, addDoc, serverTimestamp
-} from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+} from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js ";
 
 const firebaseConfig = {
   apiKey: "AIzaSyCsz2EP8IsTlG02uU2_GRfyQeeajMDuJjI",
@@ -35,7 +35,7 @@ let carrito = [];
 let userCed = '';
 
 // 🔒 bandera anti-doble-clic
-let procesando = false;
+let procesandoCompra = false;
 
 // ---------- EVENTOS ----------
 ingresarBtn.addEventListener('click', buscarUsuario);
@@ -43,8 +43,11 @@ cerrarBtn.addEventListener('click', () => location.reload());
 document.getElementById('btnConfirmar').addEventListener('click', confirmarCompra);
 document.getElementById('btnCancelar').addEventListener('click', cerrarModal);
 
+// Delegación de evento para botón "Finalizar compra" (SIEMPRE funciona)
 document.addEventListener('click', e => {
-  if (e.target && e.target.id === 'btnFin') abrirModal();
+  if (e.target && e.target.id === 'btnFin') {
+    abrirModal();
+  }
 });
 
 // ---------- FUNCIONES ----------
@@ -54,9 +57,18 @@ async function buscarUsuario() {
 
   const q = query(collection(db, 'usuariosPorFecha'), where('cedula', '==', ced));
   const snap = await getDocs(q);
-  if (snap.empty) { errorMsg.textContent = 'Cédula no encontrada'; return; }
 
-  let totalCoins = 0, fechaMasReciente = '', nombre = '', cedis = '';
+  if (snap.empty) {
+    errorMsg.textContent = 'Cédula no encontrada';
+    return;
+  }
+
+  // Sumamos coins y tomamos datos más recientes
+  let totalCoins = 0;
+  let fechaMasReciente = '';
+  let nombre = '';
+  let cedis  = '';
+
   snap.forEach(doc => {
     const data = doc.data();
     totalCoins += data.coins_ganados;
@@ -67,27 +79,41 @@ async function buscarUsuario() {
     }
   });
 
+  // RESTAMOS el total de compras ya hechas
   const qCompras = query(collection(db, 'compras'), where('cedula', '==', ced));
   const snapCompras = await getDocs(qCompras);
   let totalGastado = 0;
-  snapCompras.forEach(doc => { totalGastado += doc.data().total; });
+  snapCompras.forEach(doc => {
+    totalGastado += doc.data().total;
+  });
 
   const saldoReal = totalCoins - totalGastado;
+
   userCed = ced;
   coinsUsuario = saldoReal;
-  mostrarDatos({ fecha: fechaMasReciente, cedula: ced, nombre, cedis, coins_ganados: saldoReal });
+
+  mostrarDatos({
+    fecha: fechaMasReciente,
+    cedula: ced,
+    nombre: nombre,
+    cedis: cedis,
+    coins_ganados: saldoReal
+  });
+
   cargarHistorial();
 }
 
 function mostrarDatos(u) {
   loginCard.classList.add('hidden');
   cuentaCard.classList.remove('hidden');
+
   datosUl.innerHTML = `
     <li><strong>Fecha:</strong> ${u.fecha}</li>
     <li><strong>Cédula:</strong> ${u.cedula}</li>
     <li><strong>Nombre:</strong> ${u.nombre}</li>
     <li><strong>Cedis:</strong> ${u.cedis}</li>
   `;
+
   coinsP.textContent = u.coins_ganados;
   coinsUsuario = u.coins_ganados;
   cargarProductos();
@@ -101,17 +127,22 @@ async function cargarProductos() {
     const p = doc.data();
     const tarj = document.createElement('div');
     tarj.className = 'tarjeta';
+
     const img = document.createElement('img');
     img.src = `assets/productos/${p.producto}.png`;
     img.onerror = () => img.src = `assets/productos/${p.producto}.jpg`;
+
     const h4 = document.createElement('h4');
     h4.textContent = p.producto;
+
     const precioDiv = document.createElement('div');
     precioDiv.className = 'precio';
     precioDiv.textContent = `${p.coins} coins`;
+
     const btn = document.createElement('button');
     btn.textContent = 'Agregar';
     btn.onclick = () => agregarAlCarrito(p.producto, p.coins);
+
     tarj.append(img, h4, precioDiv, btn);
     tiendaDiv.appendChild(tarj);
   });
@@ -121,7 +152,10 @@ async function cargarHistorial() {
   historialList.innerHTML = '';
   const q = query(collection(db, 'compras'), where('cedula', '==', userCed));
   const snap = await getDocs(q);
-  if (snap.empty) { historialList.innerHTML = '<li style="text-align:center;color:#777;">Sin compras</li>'; return; }
+  if (snap.empty) {
+    historialList.innerHTML = '<li style="text-align:center;color:#777;">Sin compras</li>';
+    return;
+  }
   snap.forEach(doc => {
     const c = doc.data();
     const fecha = c.fecha?.toDate().toLocaleString('es-EC') || '-';
@@ -146,13 +180,17 @@ function actualizarCarrito() {
     carritoList.innerHTML += `<li>${item.nombre} <span>${item.precio} c</span></li>`;
   });
   bolsaSpan.textContent = `${carrito.length} · ${total} c`;
-  const oldBtn = document.getElementById('btnFin');
-  if (oldBtn) oldBtn.remove();
-  if (carrito.length) {
+
+  // Botón sin evento (la delegación lo hará)
+  if (carrito.length && !document.getElementById('btnFin')) {
     const btn = document.createElement('button');
     btn.id = 'btnFin';
     btn.textContent = 'Finalizar compra';
     carritoList.after(btn);
+  }
+  if (!carrito.length) {
+    const old = document.getElementById('btnFin');
+    if (old) old.remove();
   }
 }
 
@@ -167,70 +205,74 @@ function cerrarModal() {
   document.getElementById('modalFin').classList.add('hidden');
 }
 
-// ---------- COMPRA (con protección doble-clic) ----------
+// ---------- COMPRA: DESCUENTA DE TODAS LAS FECHAS (SIN ÍNDICE) ----------
 async function confirmarCompra() {
-  if (procesando) return;               // evita segundo clic
-  procesando = true;
+  // 🔒 evita doble-clic
+  if (procesandoCompra) return;
+  procesandoCompra = true;
 
-  const btnConfirmar = document.getElementById('btnConfirmar');
-  const btnCancelar  = document.getElementById('btnCancelar');
   const total = carrito.reduce((t, i) => t + i.precio, 0);
-
   if (total > coinsUsuario) {
     alert('Fondos insuficientes');
-    procesando = false;
+    procesandoCompra = false;
     return;
   }
 
-  // UI en proceso
+  // bloquea botones y muestra "Procesando..."
+  const btnConfirmar = document.getElementById('btnConfirmar');
+  const btnCancelar  = document.getElementById('btnCancelar');
   btnConfirmar.disabled = true;
   btnCancelar.disabled  = true;
   btnConfirmar.innerHTML = '<span class="spinner"></span> Procesando...';
 
-  try {
-    const q = query(collection(db, 'usuariosPorFecha'), where('cedula', '==', userCed));
-    const snap = await getDocs(q);
-    const docs = [];
-    snap.forEach(d => docs.push({ id: d.id, ...d.data() }));
-    docs.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+  // 1. Traer todos los docs de la cédula (sin índice)
+  const q = query(
+    collection(db, 'usuariosPorFecha'),
+    where('cedula', '==', userCed)
+  );
+  const snap = await getDocs(q);
+  const docs = [];
+  snap.forEach(d => docs.push({ id: d.id, ...d.data() }));
+  docs.sort((a, b) => new Date(b.fecha) - new Date(a.fecha)); // más reciente primero
 
-    let restante = total;
-    for (const docData of docs) {
-      if (restante <= 0) break;
-      const disponible = docData.coins_ganados;
-      if (disponible <= 0) continue;
-      const aDescontar = Math.min(disponible, restante);
-      await updateDoc(doc(db, 'usuariosPorFecha', docData.id), {
-        coins_ganados: disponible - aDescontar
-      });
-      restante -= aDescontar;
-    }
+  // 2. Descontar proporcionalmente (saltando los que ya están en 0)
+  let restante = total;
+  for (const docData of docs) {
+    if (restante <= 0) break;
+    const disponible = docData.coins_ganados;
+    if (disponible <= 0) continue;
 
-    await addDoc(collection(db, 'compras'), {
-      cedula: userCed,
-      nombre: datosUl.querySelector('li:nth-child(3)').textContent.replace('Nombre: ', ''),
-      cedis:  datosUl.querySelector('li:nth-child(4)').textContent.replace('Cedis: ', ''),
-      items: carrito,
-      total: total,
-      fecha: serverTimestamp()
+    const aDescontar = Math.min(disponible, restante);
+    await updateDoc(doc(db, 'usuariosPorFecha', docData.id), {
+      coins_ganados: disponible - aDescontar
     });
-
-    coinsUsuario -= total;
-    coinsP.textContent = coinsUsuario;
-    carrito = [];
-    actualizarCarrito();
-    cerrarModal();
-    mostrarToast();
-    cargarHistorial();
-  } catch (err) {
-    console.error(err);
-    alert('Error al procesar la compra. Inténtalo de nuevo.');
-  } finally {
-    btnConfirmar.disabled = false;
-    btnCancelar.disabled  = false;
-    btnConfirmar.textContent = 'Confirmar';
-    procesando = false;
+    restante -= aDescontar;
   }
+
+  // 3. Guardar la compra
+  await addDoc(collection(db, 'compras'), {
+    cedula: userCed,
+    nombre: datosUl.querySelector('li:nth-child(3)').textContent.replace('Nombre: ', ''),
+    cedis: datosUl.querySelector('li:nth-child(4)').textContent.replace('Cedis: ', ''),
+    items: carrito,
+    total: total,
+    fecha: serverTimestamp()
+  });
+
+  // 4. Actualizar UI
+  coinsUsuario -= total;
+  coinsP.textContent = coinsUsuario;
+  carrito = [];
+  actualizarCarrito();
+  cerrarModal();
+  mostrarToast();
+  cargarHistorial();
+
+  // 🔓 restaura botones
+  btnConfirmar.disabled = false;
+  btnCancelar.disabled  = false;
+  btnConfirmar.textContent = 'Confirmar';
+  procesandoCompra = false;
 }
 
 function mostrarToast() {
