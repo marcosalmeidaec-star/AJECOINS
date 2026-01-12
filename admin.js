@@ -37,6 +37,11 @@ const btnExportMov = document.getElementById("btnExportMov");
 const btnExportAll = document.getElementById("btnExportAllMov");
 const movCedula    = document.getElementById("movCedula");
 
+// ----------- PRODUCTOS -----------
+const productFileInput = document.getElementById("productFileInput");
+const uploadProductBtn = document.getElementById("uploadProductBtn");
+const productsBody     = document.querySelector("#productsTable tbody");
+
 // ----------- HISTORIAL -----------
 const comprasBody = document.querySelector('#comprasTable tbody');
 const btnExport   = document.getElementById('btnExport');
@@ -234,7 +239,7 @@ async function cargarMovimientosTodos() {
       concepto: "Ganado por archivo",
       coins: g.coins_ganados,
       signo: 1
-    });
+    ]);
   });
 
   // 2. TODOS los canjes
@@ -248,7 +253,7 @@ async function cargarMovimientosTodos() {
       concepto: `Canje: ${productos}`,
       coins: c.total,
       signo: -1
-    });
+    ]);
   });
 
   // 3. Ordenar y mostrar
