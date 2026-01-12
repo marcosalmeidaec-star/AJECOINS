@@ -21,7 +21,7 @@ function normalizarFecha(fecha) {
   return `${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`;
 }
 
-// ----------- USUARIOS -----------
+// ----------- USUARIOS  (colección usuariosPorFecha) -----------
 const fileInput   = document.getElementById("fileInput");
 const uploadBtn   = document.getElementById("uploadBtn");
 const usersBody   = document.querySelector("#usersTable tbody");
@@ -134,30 +134,21 @@ async function mostrarDebeHaber(cedula) {
   detalleBody.innerHTML = '<tr><td colspan="4">Cargando...</td></tr>';
   detalleDialog.showModal();
 
+  // 1. Solo valores del archivo (sin restar)
   const qUser = query(collection(db, 'usuariosPorFecha'), where('cedula', '==', cedula));
   const userSnap = await getDocs(qUser);
   const registros = [];
   userSnap.forEach(d => registros.push(d.data()));
   registros.sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
 
-  const qCompras = query(collection(db, 'compras'), where('cedula', '==', cedula));
-  const comprasSnap = await getDocs(qCompras);
-  const compras = [];
-  comprasSnap.forEach(d => compras.push(d.data()));
-
   let html = '';
   for (const r of registros) {
-    const ganados = r.coins_ganados;
-    const desde = new Date(r.fecha);
-    const canjeados = compras
-      .filter(c => c.fecha.toDate() >= desde)
-      .reduce((s, c) => s + c.total, 0);
     html += `
       <tr>
         <td>${r.fecha}</td>
-        <td>${ganados}</td>
-        <td>${canjeados}</td>
-        <td>${ganados - canjeados}</td>
+        <td>${r.coins_ganados}</td>
+        <td>-</td>
+        <td>${r.coins_ganados}</td>
       </tr>`;
   }
   detalleBody.innerHTML = html;
@@ -212,7 +203,7 @@ async function cargarMovimientos(cedula) {
     });
   });
 
-  // 2. Canjes (resta real, sin tocar Firebase)
+  // 2. Canjes (resta aparte, sin modificar el original)
   const qCan = query(collection(db, "compras"), where("cedula", "==", cedula));
   const canSnap = await getDocs(qCan);
   canSnap.forEach(d => {
@@ -227,7 +218,7 @@ async function cargarMovimientos(cedula) {
     });
   });
 
-  // 3. Ordenar y calcular saldo
+  // 3. Ordenar y calcular saldo (sin tocar el original)
   movs.sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
   let saldo = 0;
   let html = "";
@@ -265,13 +256,6 @@ function exportarMovCSV() {
 // ---------- EVENTOS (SIN TOCAR NADA DE ARRIBA) ----------
 btnVerMov.addEventListener("click", () => cargarMovimientos(movCedula.value.trim()));
 btnExportMov.addEventListener("click", exportarMovCSV);
-btnExportAll.addEventListener("click", () => {
-  cargarMovimientosTodos();
-  setTimeout(() => {
-    movCedula.value = "todos";
-    exportarMovCSV();
-  }, 500);
-});
 
 uploadProductBtn.addEventListener("click", loadProducts);
 
