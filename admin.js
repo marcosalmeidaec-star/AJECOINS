@@ -253,7 +253,7 @@ async function cargarMovimientosTodos() {
       concepto: `Canje: ${productos}`,
       coins: c.total,
       signo: -1
-    ]);
+    );
   });
 
   // 3. Ordenar y mostrar
