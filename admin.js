@@ -1,7 +1,7 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js ";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js   ";
 import {
   getFirestore, collection, getDocs, setDoc, doc, deleteDoc, query, where
-} from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js ";
+} from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js   ";
 
 const firebaseConfig = {
   apiKey: "AIzaSyCsz2EP8IsTlG02uU2_GRfyQeeajMDuJjI",
@@ -30,17 +30,41 @@ const filtroFecha = document.getElementById("filtroFecha");
 const btnFiltrar  = document.getElementById("btnFiltrar");
 const btnVerTodo  = document.getElementById("btnVerTodo");
 
+// Cache de compras por cédula
+let cacheCompras = {};
+
+async function cargarCacheCompras() {
+  const snap = await getDocs(collection(db, "compras"));
+  snap.forEach(d => {
+    const c = d.data();
+    if (!cacheCompras[c.cedula]) cacheCompras[c.cedula] = [];
+    cacheCompras[c.cedula].push({
+      fecha: c.fecha.toDate(),
+      total: c.total
+    });
+  });
+}
+
 function pintarTablaUsuarios(lista) {
   usersBody.innerHTML = lista
     .sort((a, b) => new Date(a.fecha) - new Date(b.fecha) || a.cedula.localeCompare(b.cedula))
-    .map(u => `
+    .map(u => {
+      const hasta = new Date(u.fecha);
+      const canjeados = (cacheCompras[u.cedula] || [])
+        .filter(c => c.fecha <= hasta)
+        .reduce((s, c) => s + c.total, 0);
+      const totales = u.coins_ganados - canjeados;
+      return `
       <tr class="clickable">
         <td>${u.fecha}</td>
         <td>${u.cedula}</td>
         <td>${u.nombre}</td>
         <td>${u.cedis}</td>
         <td>${u.coins_ganados}</td>
-      </tr>`).join("");
+        <td>${canjeados}</td>
+        <td>${totales}</td>
+      </tr>`;
+    }).join("");
 }
 
 // Cargar usuarios: si se pasa una fecha, filtra por ella
@@ -121,7 +145,7 @@ uploadBtn.addEventListener("click", async () => {
 
 // ----------- EXPORTAR USUARIOS -----------
 function exportarUsuariosCSV() {
-  let csv = 'Fecha,Cedula,Nombre,Cedis,Coins_Ganados\n';
+  let csv = 'Fecha,Cedula,Nombre,Cedis,Coins_Ganados,Coins_Canjeados,Coins_Totales\n';
   const filas = Array.from(usersBody.querySelectorAll('tr'));
   filas.forEach(r => {
     const celdas = Array.from(r.querySelectorAll('td')).map(td =>
@@ -216,6 +240,9 @@ function exportarComprasCSV(){
 }
 
 // ---------- INICIAL ----------
+// precargamos compras para no leer muchas veces
+await cargarCacheCompras();
+
 loadProducts();
 loadUsers();
 loadCompras();
