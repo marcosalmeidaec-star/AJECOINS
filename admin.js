@@ -49,9 +49,10 @@ function pintarTablaUsuarios(lista) {
   usersBody.innerHTML = lista
     .sort((a, b) => new Date(a.fecha) - new Date(b.fecha) || a.cedula.localeCompare(b.cedula))
     .map(u => {
-      const hasta = new Date(u.fecha);
+      // canjeados = compras DESDE esta fecha hacia adelante
+      const desde = new Date(u.fecha);
       const canjeados = (cacheCompras[u.cedula] || [])
-        .filter(c => c.fecha <= hasta)
+        .filter(c => c.fecha >= desde)
         .reduce((s, c) => s + c.total, 0);
       const totales = u.coins_ganados - canjeados;
       return `
