@@ -1,7 +1,7 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js   ";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
 import {
   getFirestore, collection, getDocs, setDoc, doc, deleteDoc, query, where
-} from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js   ";
+} from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyCsz2EP8IsTlG02uU2_GRfyQeeajMDuJjI",
@@ -30,42 +30,17 @@ const filtroFecha = document.getElementById("filtroFecha");
 const btnFiltrar  = document.getElementById("btnFiltrar");
 const btnVerTodo  = document.getElementById("btnVerTodo");
 
-// Cache de compras por cédula
-let cacheCompras = {};
-
-async function cargarCacheCompras() {
-  const snap = await getDocs(collection(db, "compras"));
-  snap.forEach(d => {
-    const c = d.data();
-    if (!cacheCompras[c.cedula]) cacheCompras[c.cedula] = [];
-    cacheCompras[c.cedula].push({
-      fecha: c.fecha.toDate(),
-      total: c.total
-    });
-  });
-}
-
 function pintarTablaUsuarios(lista) {
   usersBody.innerHTML = lista
     .sort((a, b) => new Date(a.fecha) - new Date(b.fecha) || a.cedula.localeCompare(b.cedula))
-    .map(u => {
-      // canjeados = compras DESDE esta fecha hacia adelante
-      const desde = new Date(u.fecha);
-      const canjeados = (cacheCompras[u.cedula] || [])
-        .filter(c => c.fecha >= desde)
-        .reduce((s, c) => s + c.total, 0);
-      const totales = u.coins_ganados - canjeados;
-      return `
-      <tr class="clickable">
+    .map(u => `
+      <tr>
         <td>${u.fecha}</td>
         <td>${u.cedula}</td>
         <td>${u.nombre}</td>
         <td>${u.cedis}</td>
         <td>${u.coins_ganados}</td>
-        <td>${canjeados}</td>
-        <td>${totales}</td>
-      </tr>`;
-    }).join("");
+      </tr>`).join("");
 }
 
 // Cargar usuarios: si se pasa una fecha, filtra por ella
@@ -146,7 +121,7 @@ uploadBtn.addEventListener("click", async () => {
 
 // ----------- EXPORTAR USUARIOS -----------
 function exportarUsuariosCSV() {
-  let csv = 'Fecha,Cedula,Nombre,Cedis,Coins_Ganados,Coins_Canjeados,Coins_Totales\n';
+  let csv = 'Fecha,Cedula,Nombre,Cedis,Coins_Ganados\n';
   const filas = Array.from(usersBody.querySelectorAll('tr'));
   filas.forEach(r => {
     const celdas = Array.from(r.querySelectorAll('td')).map(td =>
@@ -241,68 +216,9 @@ function exportarComprasCSV(){
 }
 
 // ---------- INICIAL ----------
-// precargamos compras para no leer muchas veces
-await cargarCacheCompras();
-
 loadProducts();
 loadUsers();
 loadCompras();
 
 const btnExportUsers = document.getElementById('btnExportUsers');
 if (btnExportUsers) btnExportUsers.addEventListener('click', exportarUsuariosCSV);
-
-// ----------- DETALLE POR FECHA (MODAL) -----------
-const detalleDialog = document.getElementById('detalleDialog');
-const detCedula     = document.getElementById('detCedula');
-const detalleBody   = document.querySelector('#detalleTable tbody');
-const cerrarDetalle = document.getElementById('cerrarDetalle');
-
-cerrarDetalle.addEventListener('click', () => detalleDialog.close());
-
-// delegación de clic en la tabla de usuarios
-usersBody.addEventListener('click', async e => {
-  const fila = e.target.closest('tr');
-  if (!fila) return;
-  const cedula = fila.cells[1].textContent.trim();
-  mostrarDebeHaber(cedula);
-});
-
-async function mostrarDebeHaber(cedula) {
-  detCedula.textContent = cedula;
-  detalleBody.innerHTML = '<tr><td colspan="4">Cargando...</td></tr>';
-  detalleDialog.showModal();
-
-  // 1. todos los registros del usuario (por fecha)
-  const qUser = query(collection(db, 'usuariosPorFecha'), where('cedula', '==', cedula));
-  const userSnap = await getDocs(qUser);
-  const registros = [];
-  userSnap.forEach(d => registros.push(d.data()));
-  registros.sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
-
-  // 2. compras del usuario
-  const qCompras = query(collection(db, 'compras'), where('cedula', '==', cedula));
-  const comprasSnap = await getDocs(qCompras);
-  const compras = [];
-  comprasSnap.forEach(d => compras.push(d.data()));
-
-  // 3. para cada fecha: canjeado = suma de compras que correspondan a esa fecha
-  let html = '';
-  for (const r of registros) {
-    const ganados = r.coins_ganados;
-    // consideramos “canjeados” las compras que se hicieron **después** de esta fecha
-    // (o usa tu propia lógica: por mes, por lote, etc.)
-    const canjeados = compras
-      .filter(c => c.fecha.toDate() >= new Date(r.fecha))
-      .reduce((s, c) => s + c.total, 0);
-    // mostramos solo el canjeado **hasta ahora** proporcional
-    // para este ejemplo lo hacemos simple: restamos proporcional por orden
-    html += `
-      <tr>
-        <td>${r.fecha}</td>
-        <td>${ganados}</td>
-        <td>${canjeados}</td>
-        <td>${ganados - canjeados}</td>
-      </tr>`;
-  }
-  detalleBody.innerHTML = html;
-}
