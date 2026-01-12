@@ -1,7 +1,7 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js ";
 import {
   getFirestore, collection, getDocs, setDoc, doc, deleteDoc, query, where
-} from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+} from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js ";
 
 const firebaseConfig = {
   apiKey: "AIzaSyCsz2EP8IsTlG02uU2_GRfyQeeajMDuJjI",
@@ -30,6 +30,7 @@ const filtroFecha = document.getElementById("filtroFecha");
 const btnFiltrar  = document.getElementById("btnFiltrar");
 const btnVerTodo  = document.getElementById("btnVerTodo");
 
+// Pintar tabla con las DOS columnas nuevas
 function pintarTablaUsuarios(lista) {
   usersBody.innerHTML = lista
     .sort((a, b) => new Date(a.fecha) - new Date(b.fecha) || a.cedula.localeCompare(b.cedula))
@@ -40,20 +41,49 @@ function pintarTablaUsuarios(lista) {
         <td>${u.nombre}</td>
         <td>${u.cedis}</td>
         <td>${u.coins_ganados}</td>
+        <td>${u.coins_canjeados}</td>
+        <td>${u.coins_totales}</td>
       </tr>`).join("");
 }
 
-// Cargar usuarios: si se pasa una fecha, filtra por ella
+// Cargar usuarios + calcular coins canjeados y totales
 async function loadUsers(fecha = null) {
   console.log("loadUsers() ejecutándose con fecha:", fecha);
   let q = collection(db, "usuariosPorFecha");
   if (fecha) q = query(q, where("fecha", "==", fecha));
 
   const snap = await getDocs(q);
-  const usuarios = [];
-  snap.forEach(d => usuarios.push(d.data()));
-  console.log("Registros obtenidos:", usuarios.length);
-  pintarTablaUsuarios(usuarios);
+  const usuariosRaw = [];
+  snap.forEach(d => usuariosRaw.push(d.data()));
+
+  // ---- calculamos coins canjeados por cédula ----
+  const canjeadosMap = {};
+  for (const u of usuariosRaw) {
+    if (!canjeadosMap[u.cedula]) canjeadosMap[u.cedula] = 0;
+  }
+  const qCompras = await getDocs(collection(db, "compras"));
+  qCompras.forEach(doc => {
+    const c = doc.data();
+    if (canjeadosMap[c.cedula] !== undefined) canjeadosMap[c.cedula] += c.total;
+  });
+
+  // ---- unificamos por cédula (dato más reciente) ----
+  const final = {};
+  usuariosRaw.forEach(u => {
+    if (!final[u.cedula] || new Date(u.fecha) > new Date(final[u.cedula].fecha)) {
+      final[u.cedula] = { ...u };
+    }
+  });
+
+  // ---- agregamos columnas nuevas ----
+  const lista = Object.values(final).map(u => ({
+    ...u,
+    coins_canjeados: canjeadosMap[u.cedula] || 0,
+    coins_totales: u.coins_ganados - (canjeadosMap[u.cedula] || 0)
+  }));
+
+  console.log("Registros obtenidos:", lista.length);
+  pintarTablaUsuarios(lista);
 }
 
 // Eventos de filtro
@@ -115,13 +145,13 @@ uploadBtn.addEventListener("click", async () => {
     subidos.push(reg);
   }
 
-  pintarTablaUsuarios(subidos);
   alert(`Archivo procesado: ${subidos.length} registros (${fechasEnArchivo.size} fechas)`);
+  loadUsers();
 });
 
 // ----------- EXPORTAR USUARIOS -----------
 function exportarUsuariosCSV() {
-  let csv = 'Fecha,Cedula,Nombre,Cedis,Coins_Ganados\n';
+  let csv = 'Fecha,Cedula,Nombre,Cedis,Coins_Ganados,Coins_Canjeados,Coins_Totales\n';
   const filas = Array.from(usersBody.querySelectorAll('tr'));
   filas.forEach(r => {
     const celdas = Array.from(r.querySelectorAll('td')).map(td =>
@@ -215,7 +245,7 @@ function exportarComprasCSV(){
   link.click();
 }
 
-// ---------- INICIAL ----------
+// ----------- INICIAL ----------
 loadProducts();
 loadUsers();
 loadCompras();
