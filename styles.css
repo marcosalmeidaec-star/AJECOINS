@@ -3,3 +3,10 @@ h1,h2{color:#222}
 table{width:100%;border-collapse:collapse;margin-top:20px;background:#fff}
 th,td{padding:10px;border:1px solid #ddd;text-align:left}
 img{border-radius:4px;width:80px}
+
+/* NUEVAS 8 LÍNEAS */
+tr.clickable { cursor: pointer; }
+dialog { border: none; border-radius: 8px; padding: 1rem; max-width: 500px; }
+dialog::backdrop { background: rgba(0,0,0,.45); }
+#detalleTable { width: 100%; border-collapse: collapse; margin-top: .5rem; }
+#detalleTable th, #detalleTable td { border: 1px solid #ccc; padding: .4rem; text-align: center; }
