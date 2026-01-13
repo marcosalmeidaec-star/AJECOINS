@@ -1,10 +1,11 @@
-// ================= FIREBASE =================
+usuario.js
+
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
 import {
-  getFirestore, collection, query, where, getDocs,
-  addDoc, serverTimestamp
+  getFirestore, collection, query, where, getDocs, addDoc, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
+/* ================= FIREBASE ================= */
 const firebaseConfig = {
   apiKey: "AIzaSyCsz2EP8IsTlG02uU2_GRfyQeeajMDuJjI",
   authDomain: "ajecoins-73829.firebaseapp.com",
@@ -17,237 +18,174 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// ================= ELEMENTOS =================
-const loginCard   = document.getElementById("login");
-const cuentaCard  = document.getElementById("cuenta");
-const cedulaInput = document.getElementById("cedulaInput");
-const ingresarBtn = document.getElementById("ingresarBtn");
-const cerrarBtn   = document.getElementById("cerrarBtn");
-const datosUl     = document.getElementById("datos");
-const coinsP      = document.getElementById("coins");
-const errorMsg    = document.getElementById("errorMsg");
-const tiendaDiv   = document.getElementById("productosTienda");
-const carritoList = document.getElementById("carritoList");
-const bolsaSpan   = document.getElementById("bolsa");
-const historialList = document.getElementById("historialList");
+/* ================= ELEMENTOS ================= */
+const loginCard = document.getElementById('login');
+const cuentaCard = document.getElementById('cuenta');
+const cedulaInput = document.getElementById('cedulaInput');
+const ingresarBtn = document.getElementById('ingresarBtn');
+const cerrarBtn = document.getElementById('cerrarBtn');
+const datosUl = document.getElementById('datos');
+const coinsP = document.getElementById('coins');
+const errorMsg = document.getElementById('errorMsg');
+const tiendaDiv = document.getElementById('productosTienda');
+const carritoList = document.getElementById('carritoList');
+const bolsaSpan = document.getElementById('bolsa');
+const historialList = document.getElementById('historialList');
 
-const modal = document.getElementById("modalFin");
-const resumenList = document.getElementById("resumenList");
-const totalFin = document.getElementById("totalFin");
-const btnConfirmar = document.getElementById("btnConfirmar");
-const btnCancelar = document.getElementById("btnCancelar");
-
-const loader = document.getElementById("loader");
-
-// ================= LOADER =================
-function mostrarLoader(texto = "Procesando…"){
-  loader.querySelector("p").textContent = texto;
-  loader.classList.remove("hidden");
-}
-function ocultarLoader(){
-  loader.classList.add("hidden");
-}
-
-// ================= VARIABLES =================
+/* ================= VARIABLES ================= */
 let coinsUsuario = 0;
 let carrito = [];
-let userCed = "";
-let procesando = false;
+let userCed = '';
 
-// ================= EVENTOS =================
-ingresarBtn.addEventListener("click", buscarUsuario);
-cerrarBtn.addEventListener("click", () => location.reload());
-btnConfirmar.addEventListener("click", confirmarCompra);
-btnCancelar.addEventListener("click", () => modal.classList.add("hidden"));
+/* ================= EVENTOS ================= */
+ingresarBtn.addEventListener('click', buscarUsuario);
+cerrarBtn.addEventListener('click', () => location.reload());
+document.getElementById('btnConfirmar').addEventListener('click', confirmarCompra);
+document.getElementById('btnCancelar').addEventListener('click', cerrarModal);
 
-document.addEventListener("click", e => {
-  if (e.target && e.target.id === "btnFin") abrirModal();
+document.addEventListener('click', e => {
+  if (e.target && e.target.id === 'btnFin') abrirModal();
 });
 
-// ================= LOGIN =================
-async function buscarUsuario(){
-  errorMsg.textContent = "";
+/* ================= LOGIN ================= */
+async function buscarUsuario() {
   const ced = cedulaInput.value.trim();
-  if(!ced){ errorMsg.textContent="Ingrese su cédula"; return; }
+  if (!ced) { errorMsg.textContent = 'Escribe tu cédula'; return; }
 
-  mostrarLoader("Buscando usuario…");
+  const q = query(collection(db, 'usuariosPorFecha'), where('cedula', '==', ced));
+  const snap = await getDocs(q);
 
-  try{
-    const q = query(collection(db,"usuariosPorFecha"), where("cedula","==",ced));
-    const snap = await getDocs(q);
-
-    if(snap.empty){
-      errorMsg.textContent="Cédula no encontrada";
-      return;
-    }
-
-    let total=0, fecha="", nombre="", cedis="";
-
-    snap.forEach(d=>{
-      const data = d.data();
-      const coins = Number(data.coins_ganados || 0);
-      total += coins;
-
-      if(!fecha || (data.fecha && new Date(data.fecha) > new Date(fecha))){
-        fecha = data.fecha || "";
-        nombre = data.nombre || "";
-        cedis = data.cedis || "";
-      }
-    });
-
-    // Historial de compras
-    const q2 = query(collection(db,"compras"), where("cedula","==",ced));
-    const s2 = await getDocs(q2);
-    let gastado = 0;
-    s2.forEach(d=> gastado += Number(d.data().total || 0));
-
-    coinsUsuario = total - gastado;
-    userCed = ced;
-
-    mostrarDatos({fecha,nombre,cedis,cedula:ced,coins:coinsUsuario});
-    cargarProductos();
-    cargarHistorial();
-
-  }catch(e){
-    alert("Error al buscar usuario");
-    console.error(e);
-  }finally{
-    ocultarLoader();
+  if (snap.empty) {
+    errorMsg.textContent = 'Cédula no encontrada';
+    return;
   }
+
+  let totalCoins = 0;
+  let fechaMasReciente = '';
+  let nombre = '';
+  let cedis = '';
+
+  snap.forEach(doc => {
+    const d = doc.data();
+    totalCoins += Number(d.coins_ganados);
+    if (!fechaMasReciente || new Date(d.fecha) > new Date(fechaMasReciente)) {
+      fechaMasReciente = d.fecha;
+      nombre = d.nombre;
+      cedis = d.cedis;
+    }
+  });
+
+  const qCompras = query(collection(db, 'compras'), where('cedula', '==', ced));
+  const snapCompras = await getDocs(qCompras);
+  let totalGastado = 0;
+  snapCompras.forEach(d => totalGastado += Number(d.data().total));
+
+  coinsUsuario = totalCoins - totalGastado;
+  userCed = ced;
+
+  mostrarDatos({ fecha: fechaMasReciente, cedula: ced, nombre, cedis });
+  coinsP.textContent = coinsUsuario;
+  cargarProductos();
+  cargarHistorial();
 }
 
-// ================= UI =================
-function mostrarDatos(u){
-  loginCard.classList.add("hidden");
-  cuentaCard.classList.remove("hidden");
-  datosUl.innerHTML=`
-    <li><b>Nombre:</b> ${u.nombre}</li>
-    <li><b>Cédula:</b> ${u.cedula}</li>
-    <li><b>Cedis:</b> ${u.cedis}</li>
-    <li><b>Fecha:</b> ${u.fecha}</li>
+/* ================= UI ================= */
+function mostrarDatos(u) {
+  loginCard.classList.add('hidden');
+  cuentaCard.classList.remove('hidden');
+  datosUl.innerHTML = `
+    <li><strong>Fecha:</strong> ${u.fecha}</li>
+    <li><strong>Cédula:</strong> ${u.cedula}</li>
+    <li><strong>Nombre:</strong> ${u.nombre}</li>
+    <li><strong>Cedis:</strong> ${u.cedis}</li>
   `;
-  coinsP.textContent = u.coins;
 }
 
-// ================= PRODUCTOS =================
-async function cargarProductos(){
-  tiendaDiv.innerHTML='<div class="spinner"></div>';
-  try{
-    const snap = await getDocs(collection(db,"productos"));
-    tiendaDiv.innerHTML = "";
-
-    if(snap.empty){
-      tiendaDiv.innerHTML = "<p>No hay productos disponibles</p>";
-      return;
-    }
-
-    snap.forEach(d=>{
-      const p = d.data();
-      if(!p.producto || !p.coins) return;
-
-      const div = document.createElement("div");
-      div.className = "tarjeta";
-      div.innerHTML = `
-        <img src="assets/productos/${p.producto}.png" onerror="this.src='assets/productos/default.png'">
-        <h4>${p.producto}</h4>
-        <b>${p.coins} coins</b>
-        <button>Agregar</button>
-      `;
-      div.querySelector("button").onclick = ()=> agregar(p.producto, p.coins);
-      tiendaDiv.appendChild(div);
-    });
-
-  }catch(e){
-    tiendaDiv.innerHTML="<p>Error al cargar productos</p>";
-    console.error(e);
-  }
+/* ================= PRODUCTOS ================= */
+async function cargarProductos() {
+  tiendaDiv.innerHTML = '';
+  const snap = await getDocs(collection(db, 'productos'));
+  snap.forEach(doc => {
+    const p = doc.data();
+    const div = document.createElement('div');
+    div.className = 'tarjeta';
+    div.innerHTML = `
+      <img src="assets/productos/${p.producto}.png">
+      <h4>${p.producto}</h4>
+      <b>${p.coins} coins</b>
+      <button>Agregar</button>
+    `;
+    div.querySelector('button').onclick = () => agregarAlCarrito(p.producto, p.coins);
+    tiendaDiv.appendChild(div);
+  });
 }
 
-// ================= CARRITO =================
-function agregar(nombre, precio){
-  if(coinsUsuario < precio) return alert("No tienes coins suficientes");
-  carrito.push({nombre, precio});
+/* ================= CARRITO ================= */
+function agregarAlCarrito(nombre, precio) {
+  if (coinsUsuario < precio) return alert('No tienes coins suficientes');
+  carrito.push({ nombre, precio });
   renderCarrito();
 }
 
-function renderCarrito(){
-  carritoList.innerHTML = "";
+function renderCarrito() {
+  carritoList.innerHTML = '';
   let total = 0;
-  carrito.forEach(i=>{
+  carrito.forEach(i => {
     total += i.precio;
     carritoList.innerHTML += `<li>${i.nombre} <span>${i.precio} c</span></li>`;
   });
-  bolsaSpan.textContent = total;
+  bolsaSpan.textContent = `${total} c`;
 
-  if(carrito.length && !document.getElementById("btnFin")){
-    const b = document.createElement("button");
-    b.id = "btnFin";
-    b.textContent = "Finalizar compra";
+  if (carrito.length && !document.getElementById('btnFin')) {
+    const b = document.createElement('button');
+    b.id = 'btnFin';
+    b.textContent = 'Finalizar compra';
     carritoList.after(b);
   }
 }
 
-// ================= MODAL =================
-function abrirModal(){
-  resumenList.innerHTML = carrito.map(i=>`<li>${i.nombre} - ${i.precio}</li>`).join("");
-  const total = carrito.reduce((a,b)=>a+b.precio,0);
-  totalFin.textContent = `Total: ${total} coins`;
-  modal.classList.remove("hidden");
+/* ================= MODAL ================= */
+function abrirModal() {
+  const total = carrito.reduce((a, b) => a + b.precio, 0);
+  document.getElementById('totalFin').textContent = `Total: ${total} coins`;
+  document.getElementById('resumenList').innerHTML = carrito.map(i => `<li>${i.nombre} · ${i.precio}</li>`).join('');
+  document.getElementById('modalFin').classList.remove('hidden');
+}
+function cerrarModal() {
+  document.getElementById('modalFin').classList.add('hidden');
 }
 
-// ================= HISTORIAL =================
-async function cargarHistorial(){
-  historialList.innerHTML = "";
-  try{
-    const q = query(collection(db,"compras"), where("cedula","==",userCed));
-    const snap = await getDocs(q);
+/* ================= COMPRA ================= */
+async function confirmarCompra() {
+  const total = carrito.reduce((a, b) => a + b.precio, 0);
+  if (total > coinsUsuario) return alert('Fondos insuficientes');
 
-    if(snap.empty){ historialList.innerHTML = "<li>Sin compras</li>"; return; }
+  await addDoc(collection(db, 'compras'), {
+    cedula: userCed,
+    items: carrito,
+    total: total,
+    fecha: serverTimestamp()
+  });
 
-    snap.forEach(d=>{
-      const c = d.data();
-      const total = Number(c.total || 0);
-      const fecha = c.fecha?.toDate ? c.fecha.toDate().toLocaleDateString() : "";
-      const li = document.createElement("li");
-      li.textContent = `${total} coins - ${fecha}`;
-      historialList.appendChild(li);
-    });
-
-  }catch(e){
-    historialList.innerHTML = "<li>Error al cargar historial</li>";
-    console.error(e);
-  }
+  coinsUsuario -= total;
+  coinsP.textContent = coinsUsuario;
+  carrito = [];
+  renderCarrito();
+  cerrarModal();
+  cargarHistorial();
 }
 
-// ================= COMPRA =================
-async function confirmarCompra(){
-  if(procesando) return;
-  procesando = true;
-  mostrarLoader("Procesando compra…");
-
-  try{
-    const total = carrito.reduce((a,b)=>a+b.precio,0);
-    if(total <= 0) throw "Carrito vacío";
-
-    await addDoc(collection(db,"compras"),{
-      cedula: userCed,
-      items: carrito,
-      total,
-      fecha: serverTimestamp()
-    });
-
-    coinsUsuario -= total;
-    coinsP.textContent = coinsUsuario;
-    carrito = [];
-    renderCarrito();
-    modal.classList.add("hidden");
-    cargarHistorial();
-
-  }catch(e){
-    alert("Error al procesar la compra");
-    console.error(e);
-  }finally{
-    ocultarLoader();
-    procesando = false;
+/* ================= HISTORIAL ================= */
+async function cargarHistorial() {
+  historialList.innerHTML = '';
+  const q = query(collection(db, 'compras'), where('cedula', '==', userCed));
+  const snap = await getDocs(q);
+  if (snap.empty) {
+    historialList.innerHTML = '<li>Sin compras</li>';
+    return;
   }
+  snap.forEach(doc => {
+    const c = doc.data();
+    historialList.innerHTML += `<li>${c.total} coins</li>`;
+  });
 }
