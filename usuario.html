@@ -4,8 +4,16 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>AJE Coins</title>
+
+<!-- CSS -->
 <link rel="stylesheet" href="usuario.css"/>
-<script type="module" src="usuario.js" defer></script>
+
+<!-- Firebase (versión compat, funciona en GitHub Pages) -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+<!-- JS -->
+<script src="usuario.js" defer></script>
 </head>
 <body>
 
@@ -52,9 +60,10 @@
 
 </section>
 
+<!-- Loader -->
 <div id="loader" class="loader">
   <div class="spinner"></div>
-  <p>Procesando compra…</p>
+  <p>Procesando…</p>
 </div>
 
 </body>
