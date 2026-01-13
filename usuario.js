@@ -3,7 +3,7 @@ const firebaseConfig = {
   apiKey: "AIzaSyCsz2EP8IsTlG02uU2_GRfyQeeajMDuJjI",
   authDomain: "ajecoins-73829.firebaseapp.com",
   projectId: "ajecoins-73829",
-  storageBucket: "ajecoins-73829.firebaseapp.com",
+  storageBucket: "ajecoins-73829",
   messagingSenderId: "247461322350",
   appId: "1:247461322350:web:802185ad39249ca650507f"
 };
@@ -35,9 +35,6 @@ ingresarBtn.addEventListener('click', buscarUsuario);
 cerrarBtn.addEventListener('click', () => location.reload());
 document.getElementById('btnConfirmar').addEventListener('click', confirmarCompra);
 document.getElementById('btnCancelar').addEventListener('click', cerrarModal);
-document.addEventListener('click', e => {
-  if(e.target && e.target.id==='btnFin') abrirModal();
-});
 
 /* ================= LOADER ================= */
 function mostrarLoader(mensaje='Procesando…'){
@@ -144,11 +141,16 @@ function renderCarrito(){
   });
   bolsaSpan.textContent=`${total} c`;
 
-  if(carrito.length && !document.getElementById('btnFin')){
-    const b=document.createElement('button');
-    b.id='btnFin';
-    b.textContent='Finalizar compra';
-    carritoList.after(b);
+  // Manejo del botón Finalizar compra
+  let btnFin = document.getElementById('btnFin');
+  if(carrito.length && !btnFin){
+    btnFin = document.createElement('button');
+    btnFin.id='btnFin';
+    btnFin.textContent='Finalizar compra';
+    btnFin.addEventListener('click', abrirModal); // ✅ evento asignado aquí
+    carritoList.after(btnFin);
+  } else if(!carrito.length && btnFin){
+    btnFin.remove(); // quitar botón si carrito vacío
   }
 }
 
