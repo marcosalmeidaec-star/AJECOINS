@@ -5,32 +5,33 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>AJE Coins</title>
 
-<!-- CSS -->
 <link rel="stylesheet" href="usuario.css"/>
 
-<!-- Firebase (versión compat, funciona en GitHub Pages) -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
-<!-- JS -->
 <script src="usuario.js" defer></script>
 </head>
 <body>
 
-<!-- TOP BAR -->
 <header class="topBar">
-  <img src="assets/logo.png" class="logo" alt="AJE Coins">
+  <img src="assets/logo.png" class="logo">
   <span>AJE Coins</span>
 </header>
 
 <!-- LOGIN -->
 <section id="login" class="card">
   <h2>Ingresa</h2>
-  <input id="cedulaInput" type="text" placeholder="Cédula" maxlength="10"/>
-  <input id="passwordInput" type="password" placeholder="Contraseña"/>
-  <small class="hint">La contraseña inicial es tu cédula</small>
+
+  <input id="cedulaInput" type="text" placeholder="Cédula" maxlength="10">
+  <input id="passwordInput" type="password" placeholder="Contraseña">
+
   <button id="ingresarBtn">Entrar</button>
   <p id="errorMsg" class="error"></p>
+
+  <p style="font-size:12px;color:#777;text-align:center">
+    Tu contraseña inicial es tu cédula
+  </p>
 </section>
 
 <!-- CUENTA -->
@@ -43,7 +44,11 @@
 
   <ul id="datos" class="datos"></ul>
 
-  <button id="btnCambiarPass" class="btnSec">Cambiar contraseña</button>
+  <!-- CAMBIAR PASSWORD -->
+  <div class="passwordBox">
+    <h4>🔐 Seguridad</h4>
+    <button id="btnCambiarPass">Cambiar contraseña</button>
+  </div>
 
   <h3>Tienda</h3>
   <div id="productosTienda" class="tienda"></div>
@@ -51,8 +56,9 @@
   <h3>Carrito <span id="bolsa">0</span></h3>
   <ul id="carritoList" class="carrito"></ul>
 
-  <button id="cerrarBtn">Cerrar</button>
+  <button id="cerrarBtn">Cerrar sesión</button>
 
+  <!-- MODAL -->
   <div id="modalFin" class="modal hidden">
     <div class="modal-content">
       <h4>Resumen</h4>
@@ -63,14 +69,12 @@
     </div>
   </div>
 
-  <div id="toast" class="toast hidden">✓ Compra realizada</div>
-
   <h3>Mi historial</h3>
   <ul id="historialList" class="historial"></ul>
 
 </section>
 
-<!-- Loader -->
+<!-- LOADER -->
 <div id="loader" class="loader">
   <div class="spinner"></div>
   <p>Procesando…</p>
