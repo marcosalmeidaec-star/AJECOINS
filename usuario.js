@@ -1,12 +1,13 @@
-// 🔹 FIREBASE COMPAT (ya cargado desde HTML)
+// 🔹 FIREBASE COMPAT
 const firebaseConfig = {
   apiKey: "AIzaSyCsz2EP8IsTlG02uU2_GRfyQeeajMDuJjI",
   authDomain: "ajecoins-73829.firebaseapp.com",
   projectId: "ajecoins-73829",
-  storageBucket: "ajecoins-73829",
+  storageBucket: "ajecoins-73829.appspot.com",
   messagingSenderId: "247461322350",
   appId: "1:247461322350:web:802185ad39249ca650507f"
 };
+
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
@@ -48,13 +49,15 @@ function ocultarLoader(){
 /* ================= LOGIN ================= */
 async function buscarUsuario(){
   const ced = cedulaInput.value.trim();
-  if(!ced){ errorMsg.textContent='Escribe tu cédula'; return; }
+  if(!ced){
+    errorMsg.textContent='Escribe tu cédula';
+    return;
+  }
 
   mostrarLoader('Cargando datos del usuario…');
 
   try{
-    const q = db.collection('usuariosPorFecha').where('cedula','==',ced);
-    const snap = await q.get();
+    const snap = await db.collection('usuariosPorFecha').where('cedula','==',ced).get();
 
     if(snap.empty){
       errorMsg.textContent='Cédula no encontrada';
@@ -74,8 +77,7 @@ async function buscarUsuario(){
       }
     });
 
-    const qCompras = db.collection('compras').where('cedula','==',ced);
-    const snapCompras = await qCompras.get();
+    const snapCompras = await db.collection('compras').where('cedula','==',ced).get();
     let totalGastado=0;
     snapCompras.forEach(d=> totalGastado += Number(d.data().total));
 
@@ -84,8 +86,10 @@ async function buscarUsuario(){
 
     mostrarDatos({fecha:fechaMasReciente, cedula:ced, nombre, cedis});
     coinsP.textContent = coinsUsuario;
-    cargarProductos();
-    cargarHistorial();
+
+    await cargarProductos();
+    await cargarHistorial();
+
   }catch(err){
     console.error(err);
     errorMsg.textContent='Error al cargar datos';
@@ -110,6 +114,7 @@ function mostrarDatos(u){
 async function cargarProductos(){
   tiendaDiv.innerHTML='';
   const snap = await db.collection('productos').get();
+
   snap.forEach(doc=>{
     const p=doc.data();
     const div=document.createElement('div');
@@ -127,7 +132,10 @@ async function cargarProductos(){
 
 /* ================= CARRITO ================= */
 function agregarAlCarrito(nombre, precio){
-  if(coinsUsuario<precio) return alert('No tienes coins suficientes');
+  if(coinsUsuario < precio){
+    alert('No tienes coins suficientes');
+    return;
+  }
   carrito.push({nombre, precio});
   renderCarrito();
 }
@@ -138,25 +146,20 @@ function renderCarrito(){
 
   carrito.forEach(i=>{
     total+=i.precio;
-    const li=document.createElement('li');
-    li.innerHTML = `${i.nombre} <span>${i.precio} c</span>`;
-    carritoList.appendChild(li);
+    carritoList.innerHTML += `<li>${i.nombre} <span>${i.precio} c</span></li>`;
   });
 
-  bolsaSpan.textContent = `${total} c`;
+  bolsaSpan.textContent=`${total} c`;
 
-  // 🔥 BOTÓN FINALIZAR DENTRO DEL <ul>
-  if(carrito.length){
-    const liBtn = document.createElement('li');
-    liBtn.style.justifyContent = 'center';
-
-    const btnFin = document.createElement('button');
-    btnFin.id = 'btnFin';
-    btnFin.textContent = 'Finalizar compra';
+  let btnFin = document.getElementById('btnFin');
+  if(carrito.length && !btnFin){
+    btnFin = document.createElement('button');
+    btnFin.id='btnFin';
+    btnFin.textContent='Finalizar compra';
     btnFin.onclick = abrirModal;
-
-    liBtn.appendChild(btnFin);
-    carritoList.appendChild(liBtn);
+    carritoList.after(btnFin);
+  }else if(!carrito.length && btnFin){
+    btnFin.remove();
   }
 }
 
@@ -176,29 +179,32 @@ function cerrarModal(){
 /* ================= COMPRA ================= */
 async function confirmarCompra(){
   const total = carrito.reduce((a,b)=>a+b.precio,0);
-  if(total>coinsUsuario) return alert('Fondos insuficientes');
+  if(total > coinsUsuario){
+    alert('Fondos insuficientes');
+    return;
+  }
 
+  cerrarModal();
   mostrarLoader('Procesando compra…');
 
   try{
     await db.collection('compras').add({
-      cedula:userCed,
-      items:carrito,
-      total:total,
-      fecha:firebase.firestore.FieldValue.serverTimestamp()
+      cedula: userCed,
+      items: carrito,
+      total: total,
+      fecha: firebase.firestore.FieldValue.serverTimestamp()
     });
 
     coinsUsuario -= total;
     coinsP.textContent = coinsUsuario;
     carrito = [];
     renderCarrito();
-    cargarHistorial();
+    await cargarHistorial();
 
   }catch(err){
     console.error(err);
-    alert('Error al procesar compra');
+    alert('Error al procesar la compra');
   }finally{
-    cerrarModal();
     ocultarLoader();
   }
 }
@@ -206,8 +212,7 @@ async function confirmarCompra(){
 /* ================= HISTORIAL ================= */
 async function cargarHistorial(){
   historialList.innerHTML='';
-  const snap = await db.collection('compras')
-    .where('cedula','==',userCed).get();
+  const snap = await db.collection('compras').where('cedula','==',userCed).get();
 
   if(snap.empty){
     historialList.innerHTML='<li>Sin compras</li>';
