@@ -1,88 +1,103 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Admin – AJE Coins</title>
-  <link rel="stylesheet" href="styles.css"/>
-  <script type="module" src="admin.js" defer></script>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Admin – AJE Coins</title>
+
+<link rel="stylesheet" href="styles.css"/>
+
+<!-- MUY IMPORTANTE: type="module" SIN defer -->
+<script type="module" src="admin.js"></script>
 </head>
+
 <body>
-  <h1>Panel de Administrador – AJE Coins</h1>
 
-  <section>
-    <h2>Subir archivo de USUARIOS</h2>
-    <input type="file" id="fileInput" accept=".csv"/>
-    <button id="uploadBtn">Cargar usuarios</button>
-  </section>
+<h1>Panel de Administrador – AJE Coins</h1>
 
-  <section>
-    <h2>Subir archivo de PRODUCTOS</h2>
-    <input type="file" id="productFileInput" accept=".csv"/>
-    <button id="uploadProductBtn">Cargar productos</button>
-  </section>
+<!-- ================== CARGA USUARIOS ================== -->
+<section class="card">
+  <h2>Subir archivo de USUARIOS</h2>
+  <input type="file" id="fileInput" accept=".csv"/>
+  <button id="uploadBtn">Cargar usuarios</button>
+</section>
 
-  <section>
-    <h2>Productos</h2>
-    <table id="productsTable">
-      <thead>
-        <tr>
-          <th>Producto</th>
-          <th>Imagen</th>
-          <th>Coins</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </section>
+<!-- ================== CARGA PRODUCTOS ================== -->
+<section class="card">
+  <h2>Subir archivo de PRODUCTOS</h2>
+  <input type="file" id="productFileInput" accept=".csv"/>
+  <button id="uploadProductBtn">Cargar productos</button>
+</section>
 
-  <section>
-    <h2>Usuarios cargados</h2>
+<!-- ================== PRODUCTOS ================== -->
+<section class="card">
+  <h2>Productos</h2>
+  <table id="productsTable">
+    <thead>
+      <tr>
+        <th>Producto</th>
+        <th>Imagen</th>
+        <th>Coins</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</section>
 
-    <!-- FILTRO POR FECHA -->
-    <div style="margin-bottom:10px;">
-      <label for="filtroFecha">Filtrar por fecha:</label>
-      <input type="date" id="filtroFecha" />
-      <button id="btnFiltrar">Filtrar</button>
-      <button id="btnVerTodo">Ver todo</button>
-    </div>
+<!-- ================== USUARIOS ================== -->
+<section class="card">
+  <h2>Usuarios cargados</h2>
 
-    <button id="btnExportUsers" class="btn btn-secondary mb-2">Exportar usuarios CSV</button>
+  <div class="filtros">
+    <label>Fecha:
+      <input type="date" id="filtroFecha"/>
+    </label>
+    <button id="btnFiltrar">Filtrar</button>
+    <button id="btnVerTodo">Ver todo</button>
+    <button id="btnExportUsers">Exportar CSV</button>
+  </div>
 
-    <table id="usersTable">
-      <thead>
-        <tr>
-          <th>Fecha</th>
-          <th>Cédula</th>
-          <th>Nombre</th>
-          <th>Cedis</th>
-          <th>Coins ganados</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </section>
+  <table id="usersTable">
+    <thead>
+      <tr>
+        <th>Fecha</th>
+        <th>Cédula</th>
+        <th>Nombre</th>
+        <th>Cedis</th>
+        <th>Coins ganados</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</section>
 
-  <section>
-    <h2>Historial de compras <button id="btnExport">Exportar CSV</button></h2>
-    <table id="comprasTable">
-      <thead>
-        <tr>
-          <th>Fecha</th>
-          <th>Cédula</th>
-          <th>Nombre</th>
-          <th>Cedis</th>
-          <th>Productos</th>
-          <th>Total</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </section>
+<!-- ================== COMPRAS ================== -->
+<section class="card">
+  <h2>
+    Historial de compras
+    <button id="btnExport">Exportar CSV</button>
+  </h2>
 
-  <!-- MODAL DE DETALLE POR FECHA -->
-  <dialog id="detalleDialog">
+  <table id="comprasTable">
+    <thead>
+      <tr>
+        <th>Fecha</th>
+        <th>Cédula</th>
+        <th>Nombre</th>
+        <th>Cedis</th>
+        <th>Productos</th>
+        <th>Total</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</section>
+
+<!-- ================== MODAL DETALLE ================== -->
+<div id="detalleModal" class="modal hidden">
+  <div class="modal-content">
     <h3>Detalle por fecha – <span id="detCedula"></span></h3>
+
     <table id="detalleTable">
       <thead>
         <tr>
@@ -94,28 +109,35 @@
       </thead>
       <tbody></tbody>
     </table>
-    <button id="cerrarDetalle">Cerrar</button>
-  </dialog>
 
-  <!-- MOVIMIENTOS POR USUARIO (EVOLUTIVO) -->
-  <section>
-    <h2>Movimientos por usuario</h2>
-    <label>Cédula: <input type="text" id="movCedula" placeholder="932064983" /></label>
+    <button id="cerrarDetalle">Cerrar</button>
+  </div>
+</div>
+
+<!-- ================== MOVIMIENTOS ================== -->
+<section class="card">
+  <h2>Movimientos por usuario</h2>
+
+  <div class="filtros">
+    <input type="text" id="movCedula" placeholder="Ingrese cédula"/>
     <button id="btnVerMov">Ver movimientos</button>
-    <button id="btnExportMov" class="btn btn-secondary">Exportar esta cédula</button>
-    <button id="btnExportAllMov" class="btn btn-secondary">Exportar TODOS</button>
-    <table id="movTable">
-      <thead>
-        <tr>
-          <th>Cédula</th>
-          <th>Fecha</th>
-          <th>Concepto</th>
-          <th>Coins</th>
-          <th>Saldo</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </section>
+    <button id="btnExportMov">Exportar esta cédula</button>
+    <button id="btnExportAllMov">Exportar TODOS</button>
+  </div>
+
+  <table id="movTable">
+    <thead>
+      <tr>
+        <th>Cédula</th>
+        <th>Fecha</th>
+        <th>Concepto</th>
+        <th>Coins</th>
+        <th>Saldo</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</section>
+
 </body>
 </html>
