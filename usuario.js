@@ -30,6 +30,8 @@ const loader = document.getElementById('loader');
 let coinsUsuario = 0;
 let carrito = [];
 let userCed = '';
+let userNombre = '';
+let userCedis = '';
 
 /* ================= EVENTOS ================= */
 ingresarBtn.addEventListener('click', buscarUsuario);
@@ -83,6 +85,8 @@ async function buscarUsuario(){
 
     coinsUsuario = totalCoins - totalGastado;
     userCed = ced;
+    userNombre = nombre;
+    userCedis = cedis;
 
     mostrarDatos({fecha:fechaMasReciente, cedula:ced, nombre, cedis});
     coinsP.textContent = coinsUsuario;
@@ -190,6 +194,8 @@ async function confirmarCompra(){
   try{
     await db.collection('compras').add({
       cedula: userCed,
+      nombre: userNombre,
+      cedis: userCedis,
       items: carrito,
       total: total,
       fecha: firebase.firestore.FieldValue.serverTimestamp()
@@ -221,6 +227,6 @@ async function cargarHistorial(){
 
   snap.forEach(doc=>{
     const c=doc.data();
-    historialList.innerHTML += `<li>${c.total} coins</li>`;
+    historialList.innerHTML += `<li>${c.items.map(i=>i.nombre).join(", ")} — ${c.total} coins</li>`;
   });
 }
