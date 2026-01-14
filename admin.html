@@ -7,7 +7,7 @@
 
 <link rel="stylesheet" href="styles.css"/>
 
-<!-- MUY IMPORTANTE: type="module" SIN defer -->
+<!-- MUY IMPORTANTE -->
 <script type="module" src="admin.js"></script>
 </head>
 
@@ -99,7 +99,10 @@
 
   <div class="filtros">
     <input type="text" id="movCedula" placeholder="Ingrese cédula"/>
-    <button id="btnVerMov">Ver movimientos</button>
+
+    <!-- Estos 3 botones son EXACTAMENTE los que el admin.js usa -->
+    <button id="btnVerMov">Ver por cédula</button>
+    <button id="btnVerTodosMov">Ver TODOS</button>
     <button id="btnExportMov">Exportar</button>
   </div>
 
