@@ -1,4 +1,4 @@
-// 🔹 FIREBASE COMPAT
+// 🔹 FIREBASE COMPAT (Mantener igual)
 const firebaseConfig = {
   apiKey: "AIzaSyCsz2EP8IsTlG02uU2_GRfyQeeajMDuJjI",
   authDomain: "ajecoins-73829.firebaseapp.com",
@@ -14,7 +14,7 @@ const db = firebase.firestore();
 /* ================= ELEMENTOS ================= */
 const loginCard = document.getElementById('login');
 const cuentaCard = document.getElementById('cuenta');
-const cedulaInput = document.getElementById('cedulaInput');
+const cedulaInput = document.getElementById('cedulaInput'); // Mantenemos el ID del HTML para no romperlo
 const passwordInput = document.getElementById('passwordInput');
 const ingresarBtn = document.getElementById('ingresarBtn');
 const cerrarBtn = document.getElementById('cerrarBtn');
@@ -31,7 +31,7 @@ const loader = document.getElementById('loader');
 /* ================= VARIABLES ================= */
 let coinsUsuario = 0;
 let carrito = [];
-let userCed = '';
+let userCod = ''; // Cambiado de userCed
 let userNombre = '';
 let userCedis = '';
 
@@ -53,44 +53,48 @@ function ocultarLoader(){
 
 /* ================= CREDENCIALES ================= */
 
-async function crearCredencialSiNoExiste(ced){
-  const ref = db.collection("credenciales").doc(ced);
+// Esta función ahora crea la credencial usando el Código de Vendedor
+async function crearCredencialSiNoExiste(cod){
+  const ref = db.collection("credenciales").doc(cod);
   const doc = await ref.get();
   if(!doc.exists){
     await ref.set({
-      password: ced,
-      creado: firebase.firestore.FieldValue.serverTimestamp()
+      password: cod, // Contraseña inicial es su código
+      creado: firebase.firestore.FieldValue.serverTimestamp(),
+      email: "" // Campo preparado para tu siguiente petición
     });
   }
 }
 
-async function obtenerCredencial(ced){
-  const doc = await db.collection("credenciales").doc(ced).get();
+async function obtenerCredencial(cod){
+  const doc = await db.collection("credenciales").doc(cod).get();
   return doc.exists ? doc.data() : null;
 }
 
 /* ================= LOGIN ================= */
 async function buscarUsuario(){
-  const ced = cedulaInput.value.trim();
+  const cod = cedulaInput.value.trim(); // Tomamos el valor del input (aunque se llame cedulaInput)
   const pass = passwordInput.value.trim();
 
-  if(!ced || !pass){
-    errorMsg.textContent='Cédula y contraseña obligatorias';
+  if(!cod || !pass){
+    errorMsg.textContent='Código y contraseña obligatorias';
     return;
   }
 
   mostrarLoader('Verificando credenciales…');
 
   try{
-    const snap = await db.collection('usuariosPorFecha').where('cedula','==',ced).get();
+    // BUSQUEDA POR codVendedor
+    const snap = await db.collection('usuariosPorFecha').where('codVendedor','==',cod).get();
+    
     if(snap.empty){
-      errorMsg.textContent='Cédula no encontrada';
+      errorMsg.textContent='Código de vendedor no encontrado';
       ocultarLoader();
       return;
     }
 
-    await crearCredencialSiNoExiste(ced);
-    const cred = await obtenerCredencial(ced);
+    await crearCredencialSiNoExiste(cod);
+    const cred = await obtenerCredencial(cod);
 
     if(cred.password !== pass){
       errorMsg.textContent='Contraseña incorrecta';
@@ -110,16 +114,17 @@ async function buscarUsuario(){
       }
     });
 
-    const snapCompras = await db.collection('compras').where('cedula','==',ced).get();
+    // Cambiamos la búsqueda de compras también a codVendedor
+    const snapCompras = await db.collection('compras').where('codVendedor','==',cod).get();
     let totalGastado=0;
     snapCompras.forEach(d=> totalGastado += Number(d.data().total));
 
     coinsUsuario = totalCoins - totalGastado;
-    userCed = ced;
+    userCod = cod;
     userNombre = nombre;
     userCedis = cedis;
 
-    mostrarDatos({fecha:fechaMasReciente, cedula:ced, nombre, cedis});
+    mostrarDatos({fecha:fechaMasReciente, codigo:cod, nombre, cedis});
     coinsP.textContent = coinsUsuario;
 
     await cargarProductos();
@@ -141,7 +146,7 @@ async function cambiarPassword(){
     return;
   }
 
-  await db.collection("credenciales").doc(userCed).update({
+  await db.collection("credenciales").doc(userCod).update({
     password: nueva
   });
 
@@ -154,7 +159,7 @@ function mostrarDatos(u){
   cuentaCard.classList.remove('hidden');
   datosUl.innerHTML=`
     <li><strong>Fecha:</strong> ${u.fecha}</li>
-    <li><strong>Cédula:</strong> ${u.cedula}</li>
+    <li><strong>Código:</strong> ${u.codigo}</li>
     <li><strong>Nombre:</strong> ${u.nombre}</li>
     <li><strong>Cedis:</strong> ${u.cedis}</li>
   `;
@@ -239,7 +244,7 @@ async function confirmarCompra(){
 
   try{
     await db.collection('compras').add({
-      cedula: userCed,
+      codVendedor: userCod, // Guardamos con código de vendedor
       nombre: userNombre,
       cedis: userCedis,
       items: carrito,
@@ -264,7 +269,7 @@ async function confirmarCompra(){
 /* ================= HISTORIAL ================= */
 async function cargarHistorial(){
   historialList.innerHTML='';
-  const snap = await db.collection('compras').where('cedula','==',userCed).get();
+  const snap = await db.collection('compras').where('codVendedor','==',userCod).get();
 
   if(snap.empty){
     historialList.innerHTML='<li>Sin compras</li>';
