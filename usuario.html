@@ -1,83 +1,117 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>AJE Coins</title>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>AJE Coins</title>
 
-<link rel="stylesheet" href="usuario.css"/>
+    <link rel="stylesheet" href="usuario.css"/>
 
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
-<script src="usuario.js" defer></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <script type="text/javascript">
+       (function(){
+          emailjs.init("9ynguWEQzb63q7ITx");
+       })();
+    </script>
+
+    <script src="usuario.js" defer></script>
 </head>
 <body>
 
 <header class="topBar">
-  <img src="assets/logo.png" class="logo">
-  <span>AJE Coins</span>
+    <img src="assets/logo.png" class="logo">
+    <span>AJE Coins</span>
 </header>
 
-<!-- LOGIN -->
 <section id="login" class="card">
-  <h2>Ingresa</h2>
+    <h2>Ingresa</h2>
 
-  <input id="cedulaInput" type="text" placeholder="Cédula" maxlength="10">
-  <input id="passwordInput" type="password" placeholder="Contraseña">
+    <input id="cedulaInput" type="text" placeholder="Código de Vendedor" maxlength="10">
+    <input id="passwordInput" type="password" placeholder="Contraseña">
 
-  <button id="ingresarBtn">Entrar</button>
-  <p id="errorMsg" class="error"></p>
+    <button id="ingresarBtn">Entrar</button>
+    <p id="errorMsg" class="error"></p>
 
-  <p style="font-size:12px;color:#777;text-align:center">
-    Tu contraseña inicial es tu cédula
-  </p>
+    <p style="text-align:center; margin-top:10px;">
+        <a href="#" id="olvideLink" style="color:#007a5a; font-size:13px; text-decoration:none; font-weight:bold;">Olvidé mi contraseña</a>
+    </p>
+
+    <p style="font-size:12px;color:#777;text-align:center; margin-top:15px;">
+        Tu contraseña inicial es tu código de vendedor
+    </p>
 </section>
 
-<!-- CUENTA -->
 <section id="cuenta" class="card hidden">
-
-  <div class="saldoHead">
-    <span>Mis coins</span>
-    <strong id="coins">0</strong>
-  </div>
-
-  <ul id="datos" class="datos"></ul>
-
-  <!-- CAMBIAR PASSWORD -->
-  <div class="passwordBox">
-    <h4>🔐 Seguridad</h4>
-    <button id="btnCambiarPass">Cambiar contraseña</button>
-  </div>
-
-  <h3>Tienda</h3>
-  <div id="productosTienda" class="tienda"></div>
-
-  <h3>Carrito <span id="bolsa">0</span></h3>
-  <ul id="carritoList" class="carrito"></ul>
-
-  <button id="cerrarBtn">Cerrar sesión</button>
-
-  <!-- MODAL -->
-  <div id="modalFin" class="modal hidden">
-    <div class="modal-content">
-      <h4>Resumen</h4>
-      <ul id="resumenList"></ul>
-      <p id="totalFin"></p>
-      <button id="btnConfirmar">Confirmar</button>
-      <button id="btnCancelar" class="sec">Cancelar</button>
+    <div class="saldoHead">
+        <span>Mis coins</span>
+        <strong id="coins">0</strong>
     </div>
-  </div>
 
-  <h3>Mi historial</h3>
-  <ul id="historialList" class="historial"></ul>
+    <ul id="datos" class="datos"></ul>
 
+    <div class="passwordBox">
+        <h4>🔐 Seguridad</h4>
+        <button id="btnCambiarPass">Cambiar contraseña</button>
+    </div>
+
+    <h3>Tienda</h3>
+    <div id="productosTienda" class="tienda"></div>
+
+    <h3>Carrito <span id="bolsa">0</span></h3>
+    <ul id="carritoList" class="carrito"></ul>
+
+    <button id="cerrarBtn">Cerrar sesión</button>
+
+    <h3>Mi historial</h3>
+    <ul id="historialList" class="historial"></ul>
 </section>
 
-<!-- LOADER -->
+<div id="modalFin" class="modal hidden">
+    <div class="modal-content">
+        <h4>Resumen</h4>
+        <ul id="resumenList"></ul>
+        <p id="totalFin"></p>
+        <button id="btnConfirmar">Confirmar</button>
+        <button id="btnCancelar" class="sec">Cancelar</button>
+    </div>
+</div>
+
+<div id="modalCorreo" class="modal hidden">
+    <div class="modal-content">
+        <h4>📧 Registro de Correo</h4>
+        <p style="font-size:13px; color:#555;">Es necesario para recuperar tu cuenta en el futuro.</p>
+        <input type="email" id="emailRegistroInput" placeholder="tu@correo.com">
+        <button id="btnGuardarEmail">Guardar Correo</button>
+    </div>
+</div>
+
+<div id="modalRecuperar" class="modal hidden">
+    <div class="modal-content">
+        <h4 id="tituloRecuperar">Recuperar Acceso</h4>
+        
+        <div id="step1Recuperar">
+            <input type="text" id="codRecuperar" placeholder="Código de Vendedor">
+            <input type="email" id="emailRecuperar" placeholder="Correo registrado">
+            <button id="btnEnviarCodigo">Enviar Código</button>
+        </div>
+
+        <div id="step2Recuperar" class="hidden">
+            <p style="font-size:12px;">Ingresa el código enviado a tu email:</p>
+            <input type="text" id="codigoVerificacionInput" placeholder="Código de 6 dígitos">
+            <input type="password" id="nuevaPassInput" placeholder="Nueva Contraseña">
+            <button id="btnRestablecer">Restablecer Contraseña</button>
+        </div>
+        
+        <button class="sec" id="btnCerrarRecuperar" style="margin-top:10px;">Cerrar</button>
+    </div>
+</div>
+
 <div id="loader" class="loader">
-  <div class="spinner"></div>
-  <p>Procesando…</p>
+    <div class="spinner"></div>
+    <p>Procesando…</p>
 </div>
 
 </body>
