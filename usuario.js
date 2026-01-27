@@ -25,7 +25,7 @@ const errorMsg = document.getElementById('errorMsg');
 const tiendaDiv = document.getElementById('productosTienda');
 const carritoList = document.getElementById('carritoList');
 const bolsaSpan = document.getElementById('bolsa');
-const historialList = document.getElementById('historialList');
+const movimientosBody = document.getElementById('movimientosBody'); // Referencia a la nueva tabla
 const loader = document.getElementById('loader');
 const modalCorreo = document.getElementById('modalCorreo');
 const modalRecuperar = document.getElementById('modalRecuperar');
@@ -114,7 +114,6 @@ async function buscarUsuario(){
 
     userCod = cod;
 
-    // 1. CAMBIO OBLIGATORIO DE CONTRASEÑA
     if (cred.requiereCambio === true) {
         ocultarLoader();
         const nueva = prompt("🔒 SEGURIDAD: Debes cambiar tu contraseña inicial por una personal:");
@@ -132,14 +131,12 @@ async function buscarUsuario(){
         return;
     }
 
-    // 2. REGISTRO DE CORREO
     if (!cred.email) {
         ocultarLoader();
         modalCorreo.classList.remove('hidden');
         return; 
     }
 
-    // 3. CARGA DE DATOS
     let totalCoins=0, fechaMasReciente='', nombre='', cedis='';
     snap.forEach(doc=>{
       const d=doc.data();
@@ -185,51 +182,92 @@ async function guardarEmail() {
 async function flujoEnviarCodigo() {
     const cod = document.getElementById('codRecuperar').value.trim();
     const email = document.getElementById('emailRecuperar').value.trim();
-    
     mostrarLoader('Enviando código...');
     const cred = await obtenerCredencial(cod);
-
-    if (!cred || cred.email !== email) {
-        ocultarLoader();
-        return alert("Los datos no coinciden.");
-    }
-
+    if (!cred || cred.email !== email) { ocultarLoader(); return alert("Los datos no coinciden."); }
     codigoGenerado = Math.floor(100000 + Math.random() * 900000).toString();
-    
-    const templateParams = {
-        user_name: cod,
-        user_email: email,
-        recovery_code: codigoGenerado
-    };
-
+    const templateParams = { user_name: cod, user_email: email, recovery_code: codigoGenerado };
     try {
-        // IDs ACTUALIZADOS
         await emailjs.send('service_5zouh3m', 'template_fwvkczd', templateParams);
         alert("Código enviado con éxito.");
         document.getElementById('step1Recuperar').classList.add('hidden');
         document.getElementById('step2Recuperar').classList.remove('hidden');
-    } catch (e) { 
-        alert("Error al enviar email. Intenta de nuevo."); 
-    } finally {
-        ocultarLoader();
-    }
+    } catch (e) { alert("Error al enviar email."); } finally { ocultarLoader(); }
 }
 
 async function restablecerPassword() {
     const codIn = document.getElementById('codigoVerificacionInput').value.trim();
     const pass = document.getElementById('nuevaPassInput').value.trim();
     const user = document.getElementById('codRecuperar').value.trim();
-
     if (codIn !== codigoGenerado) return alert("Código incorrecto");
-    if (pass.length < 4) return alert("Contraseña muy corta");
-
-    mostrarLoader('Restableciendo...');
     await db.collection("credenciales").doc(user).update({ password: pass, requiereCambio: false });
     alert("Contraseña restablecida correctamente.");
     location.reload();
 }
 
-/* ================= FUNCIONES UI ================= */
+/* ================= MOVIMIENTOS DETALLADOS (ESTILO ADMIN) ================= */
+async function cargarHistorial() {
+  movimientosBody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px;">Cargando movimientos...</td></tr>';
+  
+  try {
+    let movimientos = [];
+    let saldoCalc = 0;
+
+    // 1. Obtener CARGAS
+    const snapIngresos = await db.collection('usuariosPorFecha').where('codVendedor', '==', userCod).get();
+    snapIngresos.forEach(doc => {
+      const d = doc.data();
+      movimientos.push({
+        fecha: d.fecha,
+        concepto: "Carga de Coins",
+        coins: Number(d.coins_ganados)
+      });
+    });
+
+    // 2. Obtener COMPRAS
+    const snapCompras = await db.collection('compras').where('codVendedor', '==', userCod).get();
+    snapCompras.forEach(doc => {
+      const c = doc.data();
+      const fechaC = c.fecha.toDate().toISOString().slice(0, 10);
+      movimientos.push({
+        fecha: fechaC,
+        concepto: `Canje: ${c.items.map(i => i.nombre).join(", ")}`,
+        coins: -Number(c.total)
+      });
+    });
+
+    // 3. Ordenar por fecha (Antiguo a Reciente)
+    movimientos.sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
+
+    // 4. Renderizar
+    movimientosBody.innerHTML = '';
+    if (movimientos.length === 0) {
+      movimientosBody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px;">Sin movimientos</td></tr>';
+      return;
+    }
+
+    movimientos.forEach(m => {
+      saldoCalc += m.coins;
+      const colorC = m.coins >= 0 ? '#007a5a' : '#d9534f';
+      const prefijo = m.coins >= 0 ? '+' : '';
+
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td style="padding: 10px; border-bottom: 1px solid #eee;">${m.fecha}</td>
+        <td style="padding: 10px; border-bottom: 1px solid #eee;">${m.concepto}</td>
+        <td style="padding: 10px; border-bottom: 1px solid #eee; text-align:center; color:${colorC}; font-weight:bold;">${prefijo}${m.coins}</td>
+        <td style="padding: 10px; border-bottom: 1px solid #eee; text-align:center; font-weight:bold;">${saldoCalc}</td>
+      `;
+      movimientosBody.appendChild(tr);
+    });
+
+  } catch (err) {
+    console.error(err);
+    movimientosBody.innerHTML = '<tr><td colspan="4">Error al cargar historial</td></tr>';
+  }
+}
+
+/* ================= FUNCIONES UI Y TIENDA ================= */
 function mostrarDatos(u){
   loginCard.classList.add('hidden');
   cuentaCard.classList.remove('hidden');
@@ -288,15 +326,8 @@ async function confirmarCompra(){
     coinsP.textContent = coinsUsuario;
     carrito = [];
     renderCarrito();
-    await cargarHistorial();
+    await cargarHistorial(); // Actualiza la tabla de movimientos tras la compra
   }catch(err){ alert('Error'); }finally{ ocultarLoader(); }
-}
-
-async function cargarHistorial(){
-  historialList.innerHTML='';
-  const snap = await db.collection('compras').where('codVendedor','==',userCod).get();
-  if(snap.empty){ historialList.innerHTML='<li>Sin compras</li>'; return; }
-  snap.forEach(doc=>{ const c=doc.data(); historialList.innerHTML += `<li>${c.items.map(i=>i.nombre).join(", ")} — ${c.total} c</li>`; });
 }
 
 async function cambiarPassword(){
