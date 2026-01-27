@@ -10,55 +10,62 @@
 
 <body>
 
-<h1>Panel de Administrador – AJE Coins</h1>
+<header class="topBar">
+  <img src="assets/logo.png" class="logo">
+  <span>Panel Administrativo – AJE Coins</span>
+</header>
 
 <section class="card">
-  <h2>Subir archivo de USUARIOS</h2>
+  <h2>Carga de Información</h2>
   <div class="filtros">
-    <input type="file" id="fileInput" accept=".csv"/>
-    <button id="uploadBtn">Cargar usuarios</button>
+    <div style="flex:1;">
+      <label><strong>Usuarios (CSV):</strong></label>
+      <input type="file" id="fileInput" accept=".csv"/>
+      <button id="uploadBtn">Cargar Usuarios</button>
+    </div>
+    <div style="flex:1;">
+      <label><strong>Productos (CSV):</strong></label>
+      <input type="file" id="productFileInput" accept=".csv"/>
+      <button id="uploadProductBtn">Cargar Productos</button>
+    </div>
   </div>
 </section>
 
 <section class="card">
-  <h2>Subir archivo de PRODUCTOS</h2>
-  <div class="filtros">
-    <input type="file" id="productFileInput" accept=".csv"/>
-    <button id="uploadProductBtn">Cargar productos</button>
+  <h2>Gestión de Usuarios (Lista Maestra)</h2>
+  <p style="font-size: 12px; color: #666; margin-bottom: 15px;">
+    Eliminar a un usuario aquí borrará su acceso y todos sus coins registrados permanentemente.
+  </p>
+  <div style="overflow-x:auto;">
+    <table id="tablaMaestraUsuarios">
+      <thead>
+        <tr>
+          <th>Código Vendedor</th>
+          <th>Nombre Completo</th>
+          <th>CEDIS</th>
+          <th>Acción</th>
+        </tr>
+      </thead>
+      <tbody id="maestraBody"></tbody>
+    </table>
   </div>
 </section>
 
 <section class="card">
-  <h2>Productos</h2>
-  <table id="productsTable">
-    <thead>
-      <tr>
-        <th>Producto</th>
-        <th>Imagen</th>
-        <th>Coins</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
-</section>
-
-<section class="card">
-  <h2>Usuarios cargados (Cargas de Coins)</h2>
+  <h2>Historial de Cargas de Coins</h2>
   <div class="filtros">
-    <label>Fecha: <input type="date" id="filtroFecha"/></label>
-    <button id="btnFiltrar">Filtrar</button>
-    <button id="btnVerTodo">Ver todo</button>
+    <input type="date" id="filtroFecha"/>
+    <button id="btnFiltrar">Filtrar por Fecha</button>
+    <button id="btnVerTodo">Ver Todo</button>
     <button id="btnExportUsers">Exportar CSV</button>
   </div>
   <table id="usersTable">
     <thead>
       <tr>
-        <th>Fecha</th>
+        <th>Fecha Carga</th>
         <th>Código Vendedor</th>
         <th>Nombre</th>
-        <th>Cedis</th>
-        <th>Coins</th>
-        <th>Acciones</th>
+        <th>Coins Cargados</th>
       </tr>
     </thead>
     <tbody></tbody>
@@ -66,14 +73,13 @@
 </section>
 
 <section class="card">
-  <h2>Historial de compras <button id="btnExport">Exportar CSV</button></h2>
+  <h2>Historial de Canjes <button id="btnExport" style="float:right; font-size:12px;">Exportar CSV</button></h2>
   <table id="comprasTable">
     <thead>
       <tr>
-        <th>Fecha</th>
+        <th>Fecha/Hora</th>
         <th>Código Vendedor</th>
         <th>Nombre</th>
-        <th>Cedis</th>
         <th>Productos</th>
         <th>Total</th>
       </tr>
@@ -83,19 +89,18 @@
 </section>
 
 <section class="card">
-  <h2>Movimientos por usuario</h2>
+  <h2>Consulta de Movimientos por Vendedor</h2>
   <div class="filtros">
-    <input type="text" id="movCedula" placeholder="Código de Vendedor"/>
-    <button id="btnVerMov">Ver por código</button>
-    <button id="btnVerTodosMov">Ver TODOS</button>
+    <input type="text" id="movCedula" placeholder="Código de Vendedor..."/>
+    <button id="btnVerMov">Ver Historial</button>
+    <button id="btnVerTodosMov">Ver Todos</button>
     <button id="btnExportMov">Exportar</button>
   </div>
   <table id="movTable">
     <thead>
       <tr>
-        <th>Código Vendedor</th>
+        <th>Código</th>
         <th>Nombre</th>
-        <th>Cedis</th>
         <th>Fecha</th>
         <th>Concepto</th>
         <th>Coins</th>
