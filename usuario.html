@@ -13,7 +13,7 @@
 <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 <script type="text/javascript">
    (function(){
-      // Inicialización con tu Public Key proporcionada
+      // Inicialización con tu Public Key
       emailjs.init("9ynguWEQzb63q7ITx");
    })();
 </script>
@@ -66,10 +66,25 @@
   <h3>Carrito <span id="bolsa">0</span></h3>
   <ul id="carritoList" class="carrito"></ul>
 
-  <button id="cerrarBtn">Cerrar sesión</button>
+  <button id="cerrarBtn" style="margin-top: 20px;">Cerrar sesión</button>
 
-  <h3>Mi historial</h3>
-  <ul id="historialList" class="historial"></ul>
+  <hr style="margin: 25px 0; border: 0; border-top: 1px solid #eee;">
+
+  <h3>Mis Movimientos</h3>
+  <div style="overflow-x:auto;">
+    <table id="tablaMovimientosUsuario" style="width:100%; border-collapse: collapse; font-size: 13px;">
+      <thead>
+        <tr style="background-color: #007a5a; color: white;">
+          <th style="padding: 10px; text-align: left;">Fecha</th>
+          <th style="padding: 10px; text-align: left;">Concepto</th>
+          <th style="padding: 10px; text-align: center;">Coins</th>
+          <th style="padding: 10px; text-align: center;">Saldo</th>
+        </tr>
+      </thead>
+      <tbody id="movimientosBody">
+        </tbody>
+    </table>
+  </div>
 
 </section>
 
@@ -85,21 +100,16 @@
 <div id="modalRecuperar" class="modal hidden">
   <div class="modal-content">
     <h4 id="tituloRecuperar">Recuperar Acceso</h4>
-    
     <div id="step1Recuperar">
-      <p style="font-size:12px;">Ingresa tus datos registrados:</p>
       <input type="text" id="codRecuperar" placeholder="Código de Vendedor">
       <input type="email" id="emailRecuperar" placeholder="Correo electrónico">
       <button id="btnEnviarCodigo">Enviar Código</button>
     </div>
-
     <div id="step2Recuperar" class="hidden">
-      <p style="font-size:12px; color: #d9534f;">Hemos enviado un código a tu correo.</p>
       <input type="text" id="codigoVerificacionInput" placeholder="Código de 6 dígitos">
       <input type="password" id="nuevaPassInput" placeholder="Nueva Contraseña">
       <button id="btnRestablecer">Restablecer Contraseña</button>
     </div>
-    
     <button class="sec" id="btnCerrarRecuperar" style="margin-top:10px;">Cancelar</button>
   </div>
 </div>
