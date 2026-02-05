@@ -1,80 +1,58 @@
 /* ===================================================
-   ESTILOS BASE Y CONTROL DE ANCHO TOTAL
+   ESTILOS BASE Y CONTENEDOR FULL-WIDTH (styles.css)
    =================================================== */
 body {
     margin: 0;
-    font-family: Arial, sans-serif;
-    background: #f4f6f8;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f4f7f6;
     color: #333;
 }
 
-/* Permitimos que el contenedor ocupe casi toda la pantalla (95%) */
+/* Contenedor principal: Ahora permite expandirse en Admin */
 .main-container {
-    width: 95%;
-    max-width: 1600px; /* Se expande mucho más en monitores grandes */
-    margin: 20px auto;
-    padding: 10px;
+    width: 95%; /* Ocupa casi todo el ancho lateral */
+    max-width: 1600px; /* Límite amplio para monitores grandes */
+    margin: 0 auto;
+    padding: 20px;
     box-sizing: border-box;
 }
 
-.hidden { display: none !important; }
-
-/* ================= TOP BAR (PANEL ADMIN) ================= */
 .topBar {
-    background: #007a5a;
+    background-color: #007a5a;
     color: white;
-    padding: 15px 20px;
-    font-size: 20px;
-    font-weight: bold;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    padding: 10px 20px;
     display: flex;
     align-items: center;
     gap: 15px;
+    font-weight: bold;
+    font-size: 1.2rem;
     position: sticky;
     top: 0;
     z-index: 1000;
 }
 
 .logo {
-    height: 32px;
-    width: auto;
+    height: 40px;
 }
 
-/* ================= CARDS (AJUSTADAS PARA ADMIN) ================= */
+/* ================= CARDS (SIN RESTRICCIÓN DE ANCHO) ================= */
 .card {
-    width: 100%; /* Ahora ocupa todo el ancho del main-container */
     background: white;
     padding: 25px;
     border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
     margin-bottom: 25px;
+    width: 100%; /* Ocupa todo el ancho del main-container */
     box-sizing: border-box;
 }
 
-/* ================= SECCIÓN DE CARGA (FILTROS) ================= */
-.filtros {
-    display: flex;
-    flex-wrap: wrap; /* Se adapta a móviles automáticamente */
-    gap: 20px;
-    align-items: flex-end;
-    margin-bottom: 15px;
-}
+.hidden { display: none !important; }
 
-.filtros > div {
-    flex: 1;
-    min-width: 280px; /* Evita que se compriman demasiado */
-    background: #f9f9f9;
-    padding: 15px;
-    border-radius: 8px;
-    border: 1px solid #eee;
-}
-
-/* ================= TABLAS (ANCHO COMPLETO) ================= */
+/* ================= TABLAS DEL ADMIN ================= */
 table {
     width: 100%;
     border-collapse: collapse;
-    margin-top: 10px;
-    font-size: 14px;
+    margin-top: 15px;
 }
 
 th, td {
@@ -86,58 +64,35 @@ th, td {
 th {
     background-color: #007a5a;
     color: white;
-    font-weight: bold;
-    text-transform: uppercase;
-    font-size: 12px;
 }
 
-tr:nth-child(even) {
-    background-color: #fcfcfc;
+/* ================= FILTROS LADO A LADO ================= */
+.filtros {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    align-items: flex-end;
 }
 
-/* ================= BOTONES E INPUTS (TU ESTILO ORIGINAL) ================= */
-button {
-    width: 100%;
-    padding: 12px;
-    background: #007a5a;
-    border: none;
-    color: white;
+.filtros > div {
+    flex: 1;
+    min-width: 280px;
+    padding: 15px;
+    background: #f9f9f9;
     border-radius: 8px;
-    font-weight: bold;
-    cursor: pointer;
-    transition: background 0.2s ease, transform 0.2s ease;
-}
-
-button:hover {
-    background: #005a44;
-    transform: translateY(-2px);
-}
-
-button.sec {
-    background: #ccc;
-    color: black;
-}
-
-input {
-    width: 100%;
-    padding: 12px;
-    margin-bottom: 10px;
-    border-radius: 8px;
-    border: 1px solid #ddd;
-    font-size: 14px;
-    box-sizing: border-box;
 }
 
 /* ================= LOADER (TU DISEÑO ORIGINAL) ================= */
 .loader {
     position: fixed;
-    inset: 0;
-    background: rgba(255,255,255,0.9);
-    display: none; /* Se activa con la clase .active */
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(255, 255, 255, 0.9);
+    display: none; /* Se activa con .active desde JS */
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    z-index: 3000;
+    z-index: 9999;
 }
 
 .loader.active { display: flex; }
@@ -145,25 +100,37 @@ input {
 .spinner {
     width: 50px;
     height: 50px;
-    border: 5px solid #eee;
+    border: 5px solid #f3f3f3;
     border-top: 5px solid #007a5a;
     border-radius: 50%;
     animation: spin 1s linear infinite;
-    margin-bottom: 15px;
 }
 
 @keyframes spin {
-    to { transform: rotate(360deg); }
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
 }
 
-/* ================= RESPONSIVO ================= */
-@media (max-width: 768px) {
-    .main-container {
-        width: 100%;
-        padding: 10px;
-    }
-    
-    .card {
-        padding: 15px;
-    }
+/* ================= BOTONES E INPUTS ================= */
+button {
+    background-color: #007a5a;
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    width: 100%;
+    transition: background 0.3s;
+}
+
+button:hover { background-color: #005f45; }
+
+input {
+    width: 100%;
+    padding: 12px;
+    margin: 8px 0;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    box-sizing: border-box;
 }
