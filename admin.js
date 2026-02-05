@@ -43,12 +43,12 @@ function descargarCSV(nombre, filas) {
   a.click();
 }
 
-// Función para controlar el Loader visual
+// Función para controlar el Loader visual (Ajustado a clase .active de styles.css)
 function toggleLoader(show) {
   const loader = document.getElementById('loader');
   if (loader) {
-    if (show) loader.classList.remove('hidden');
-    else loader.classList.add('hidden');
+    if (show) loader.classList.add('active'); // Muestra usando tu CSS
+    else loader.classList.remove('active');   // Oculta
   }
 }
 
@@ -93,7 +93,7 @@ document.getElementById("uploadBtn").onclick = async () => {
         codVendedor, 
         nombre, 
         cedis, 
-        coins_ganados: Number(coins.replace(/,/g, "")) || 0, 
+        coins_ganados: Number(String(coins).replace(/,/g, "")) || 0, // Limpieza de comas
         creado: Timestamp.now()
       }, { merge: true });
     }
@@ -117,19 +117,21 @@ async function loadUsers() {
 
 function renderListaMaestra(lista) {
   const maestraBody = document.getElementById("maestraBody");
+  if (!maestraBody) return;
   maestraBody.innerHTML = "";
   const unicos = {};
   lista.forEach(u => { if(!unicos[u.codVendedor]) unicos[u.codVendedor] = u; });
   Object.values(unicos).forEach(u => {
-    maestraBody.innerHTML += `<tr><td>${u.codVendedor}</td><td>${u.nombre}</td><td>${u.cedis}</td><td><button class="btn-eliminar" onclick="eliminarUsuarioTotal('${u.codVendedor}')">Eliminar Todo</button></td></tr>`;
+    maestraBody.innerHTML += `<tr><td>${u.codVendedor}</td><td>${u.nombre}</td><td>${u.cedis}</td><td style="text-align:center;"><button class="btn-eliminar" onclick="eliminarUsuarioTotal('${u.codVendedor}')" style="width:auto; background:#d9534f;">Eliminar Todo</button></td></tr>`;
   });
 }
 
 function renderCargas(lista) {
   const usersBody = document.querySelector("#usersTable tbody");
+  if (!usersBody) return;
   usersBody.innerHTML = "";
   lista.sort((a,b) => a.fecha.localeCompare(b.fecha)).forEach(u => {
-    usersBody.innerHTML += `<tr><td>${u.fecha}</td><td>${u.codVendedor}</td><td>${u.nombre}</td><td>${u.coins_ganados}</td></tr>`;
+    usersBody.innerHTML += `<tr><td>${u.fecha}</td><td>${u.codVendedor}</td><td>${u.nombre}</td><td style="text-align:center;">${u.coins_ganados}</td></tr>`;
   });
 }
 
@@ -147,9 +149,10 @@ async function loadCompras() {
   cacheCompras = [];
   snap.forEach(d => cacheCompras.push(d.data()));
   const body = document.querySelector("#comprasTable tbody");
+  if (!body) return;
   body.innerHTML = "";
   cacheCompras.sort((a,b) => a.fecha.toMillis() - b.fecha.toMillis()).forEach(c => {
-    body.innerHTML += `<tr><td>${c.fecha.toDate().toLocaleString()}</td><td>${c.codVendedor}</td><td>${c.nombre}</td><td>${c.items.map(i=>i.nombre).join(", ")}</td><td>${c.total}</td></tr>`;
+    body.innerHTML += `<tr><td>${c.fecha.toDate().toLocaleString()}</td><td>${c.codVendedor}</td><td>${c.nombre}</td><td>${c.items.map(i=>i.nombre).join(", ")}</td><td style="text-align:center;">${c.total}</td></tr>`;
   });
 }
 
@@ -202,8 +205,9 @@ async function obtenerMovimientos(cod) {
 }
 
 function renderMov(lista) {
-  const body = document.querySelector("#movTable tbody");
-  body.innerHTML = lista.length ? lista.map(m => `<tr><td>${m.cod}</td><td>${m.nom}</td><td>${m.fec}</td><td>${m.con}</td><td style="color:${m.cns>=0?'green':'red'}">${m.cns}</td><td>${m.sld}</td></tr>`).join('') : "<tr><td colspan='6'>No hay datos</td></tr>";
+  const body = document.getElementById("movBody"); // ID ajustado para admin.html
+  if (!body) return;
+  body.innerHTML = lista.length ? lista.map(m => `<tr><td>${m.cod}</td><td>${m.nom}</td><td>${m.fec}</td><td>${m.con}</td><td style="color:${m.cns>=0?'green':'red'}; text-align:center;">${m.cns}</td><td style="text-align:center;">${m.sld}</td></tr>`).join('') : "<tr><td colspan='6'>No hay datos</td></tr>";
 }
 
 document.getElementById("btnExportMov").onclick = () => {
@@ -227,8 +231,7 @@ document.getElementById("uploadProductBtn").onclick = async () => {
       if (parts.length < 2) continue;
       const [nombre, coins] = parts;
       
-      // Limpiamos comas de miles y aseguramos nombre limpio
-      const valorCoins = Number(coins.replace(/,/g, "")) || 0;
+      const valorCoins = Number(String(coins).replace(/,/g, "")) || 0; // Limpieza de comas
       const nombreLimpio = nombre.trim();
 
       await setDoc(doc(db, "productos", nombreLimpio), { 
@@ -248,10 +251,11 @@ document.getElementById("uploadProductBtn").onclick = async () => {
 async function loadProducts() {
   const snap = await getDocs(collection(db, "productos"));
   const body = document.querySelector("#productsTable tbody");
+  if (!body) return;
   body.innerHTML = "";
   snap.forEach(d => { 
     const p = d.data(); 
-    body.innerHTML += `<tr><td>${p.producto}</td><td><img src="assets/productos/${p.producto}.png" width="40" onerror="this.src='assets/logo.png'"></td><td>${p.coins}</td></tr>`;
+    body.innerHTML += `<tr><td>${p.producto}</td><td style="text-align:center;"><img src="assets/productos/${p.producto}.png" width="40" onerror="this.src='assets/logo.png'"></td><td style="text-align:center;">${p.coins}</td></tr>`;
   });
 }
 
