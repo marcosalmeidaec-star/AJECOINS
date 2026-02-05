@@ -1,170 +1,169 @@
 /* ===================================================
-   ESTILOS BASE Y CONTENEDOR FULL-WIDTH
+   ESTILOS BASE Y CONTROL DE ANCHO TOTAL
    =================================================== */
 body {
     margin: 0;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: #f4f7f6;
+    font-family: Arial, sans-serif;
+    background: #f4f6f8;
     color: #333;
 }
 
-/* Contenedor principal que permite el ancho total */
+/* Permitimos que el contenedor ocupe casi toda la pantalla (95%) */
 .main-container {
-    width: 100%;
-    max-width: 1400px; /* Ajusta este valor si quieres que estire aún más */
-    margin: 0 auto;
-    padding: 20px;
+    width: 95%;
+    max-width: 1600px; /* Se expande mucho más en monitores grandes */
+    margin: 20px auto;
+    padding: 10px;
     box-sizing: border-box;
 }
 
+.hidden { display: none !important; }
+
+/* ================= TOP BAR (PANEL ADMIN) ================= */
 .topBar {
-    background-color: #007a5a;
+    background: #007a5a;
     color: white;
-    padding: 10px 20px;
+    padding: 15px 20px;
+    font-size: 20px;
+    font-weight: bold;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
     display: flex;
     align-items: center;
     gap: 15px;
-    font-weight: bold;
-    font-size: 1.2rem;
     position: sticky;
     top: 0;
     z-index: 1000;
 }
 
 .logo {
-    height: 40px;
+    height: 32px;
+    width: auto;
 }
 
-/* ===================================================
-   DISEÑO DE CUENTA (SIDEBAR + CONTENIDO)
-   =================================================== */
-
-/* Desktop: Sidebar a la izquierda, Tienda a la derecha */
-.user-layout {
-    display: grid;
-    grid-template-columns: 300px 1fr; /* Sidebar fija y contenido flexible */
-    gap: 25px;
-    align-items: start;
-}
-
-/* Responsivo para Celulares: Todo en una sola columna */
-@media (max-width: 768px) {
-    .user-layout {
-        grid-template-columns: 1fr;
-    }
-    
-    .main-container {
-        padding: 10px;
-    }
-}
-
+/* ================= CARDS (AJUSTADAS PARA ADMIN) ================= */
 .card {
+    width: 100%; /* Ahora ocupa todo el ancho del main-container */
     background: white;
-    padding: 20px;
+    padding: 25px;
     border-radius: 12px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-    margin-bottom: 20px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    margin-bottom: 25px;
+    box-sizing: border-box;
 }
 
-.hidden { display: none !important; }
-
-/* ===================================================
-   TIENDA (PRODUCTOS EN GRILLA)
-   =================================================== */
-.tienda {
-    display: grid;
-    /* Ajusta automáticamente cuántos productos caben según el ancho */
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    gap: 20px;
-}
-
-/* Estilo de cada producto individual */
-.producto-card {
-    border: 1px solid #eee;
-    padding: 15px;
-    border-radius: 10px;
-    text-align: center;
-    transition: transform 0.2s;
-}
-
-.producto-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-}
-
-.producto-card img {
-    max-width: 100%;
-    height: 150px;
-    object-fit: contain;
-}
-
-/* ===================================================
-   LOADER (SPINNER ANIMADO)
-   =================================================== */
-.loader {
-    position: fixed;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
-    background: rgba(255, 255, 255, 0.9);
+/* ================= SECCIÓN DE CARGA (FILTROS) ================= */
+.filtros {
     display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    z-index: 9999;
+    flex-wrap: wrap; /* Se adapta a móviles automáticamente */
+    gap: 20px;
+    align-items: flex-end;
+    margin-bottom: 15px;
 }
 
-.spinner {
-    width: 50px;
-    height: 50px;
-    border: 5px solid #f3f3f3;
-    border-top: 5px solid #007a5a;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
+.filtros > div {
+    flex: 1;
+    min-width: 280px; /* Evita que se compriman demasiado */
+    background: #f9f9f9;
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid #eee;
 }
 
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+/* ================= TABLAS (ANCHO COMPLETO) ================= */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+    font-size: 14px;
 }
 
-/* ===================================================
-   BOTONES E INPUTS
-   =================================================== */
-button {
+th, td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+}
+
+th {
     background-color: #007a5a;
     color: white;
-    border: none;
-    padding: 12px 20px;
-    border-radius: 8px;
-    cursor: pointer;
     font-weight: bold;
-    width: 100%;
-    transition: background 0.3s;
+    text-transform: uppercase;
+    font-size: 12px;
 }
 
-button:hover { background-color: #005f45; }
+tr:nth-child(even) {
+    background-color: #fcfcfc;
+}
 
-button.sec { background-color: #666; }
+/* ================= BOTONES E INPUTS (TU ESTILO ORIGINAL) ================= */
+button {
+    width: 100%;
+    padding: 12px;
+    background: #007a5a;
+    border: none;
+    color: white;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.2s ease, transform 0.2s ease;
+}
+
+button:hover {
+    background: #005a44;
+    transform: translateY(-2px);
+}
+
+button.sec {
+    background: #ccc;
+    color: black;
+}
 
 input {
     width: 100%;
     padding: 12px;
-    margin: 8px 0;
-    border: 1px solid #ccc;
+    margin-bottom: 10px;
     border-radius: 8px;
+    border: 1px solid #ddd;
+    font-size: 14px;
     box-sizing: border-box;
 }
 
-.saldoHead {
-    background: #e6f2ef;
-    padding: 20px;
-    border-radius: 10px;
-    text-align: center;
-    margin-bottom: 20px;
+/* ================= LOADER (TU DISEÑO ORIGINAL) ================= */
+.loader {
+    position: fixed;
+    inset: 0;
+    background: rgba(255,255,255,0.9);
+    display: none; /* Se activa con la clase .active */
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 3000;
 }
 
-.saldoHead strong {
-    display: block;
-    font-size: 2.5rem;
-    color: #007a5a;
+.loader.active { display: flex; }
+
+.spinner {
+    width: 50px;
+    height: 50px;
+    border: 5px solid #eee;
+    border-top: 5px solid #007a5a;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 15px;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* ================= RESPONSIVO ================= */
+@media (max-width: 768px) {
+    .main-container {
+        width: 100%;
+        padding: 10px;
+    }
+    
+    .card {
+        padding: 15px;
+    }
 }
