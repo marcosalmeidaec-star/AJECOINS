@@ -23,21 +23,14 @@ let cacheMovimientos = [];
 
 /* =================== UTILIDADES CORREGIDAS =================== */
 function normalizarFecha(fecha) {
-  // Protección: Si la fecha es nula, vacía o no es texto, evitar error de padStart
   if (!fecha || typeof fecha !== "string" || fecha.trim() === "") return "2026-01-01";
-  
   if (fecha.includes("-")) return fecha;
-  
   const partes = fecha.split("/");
-  // Si no tiene el formato D/M/Y esperado, devolvemos el valor original para evitar romper el flujo
   if (partes.length < 3) return fecha;
-
   const [d, m, y] = partes;
-  // Aplicamos padStart solo asegurando que d y m existan
   const dia = (d || "01").padStart(2, "0");
   const mes = (m || "01").padStart(2, "0");
   const anio = y || "2026";
-  
   return `${anio}-${mes}-${dia}`;
 }
 
@@ -50,47 +43,67 @@ function descargarCSV(nombre, filas) {
   a.click();
 }
 
+// Función para controlar el Loader visual
+function toggleLoader(show) {
+  const loader = document.getElementById('loader');
+  if (loader) {
+    if (show) loader.classList.remove('hidden');
+    else loader.classList.add('hidden');
+  }
+}
+
 /* =================== ELIMINAR USUARIO =================== */
 window.eliminarUsuarioTotal = async (codVendedor) => {
   if (!confirm(`⚠️ ¿ELIMINAR acceso y coins del vendedor ${codVendedor}?`)) return;
+  toggleLoader(true);
   try {
     await deleteDoc(doc(db, "credenciales", codVendedor));
     const snapCargas = await getDocs(query(collection(db, "usuariosPorFecha"), where("codVendedor", "==", codVendedor)));
     for (const d of snapCargas.docs) { await deleteDoc(doc(db, "usuariosPorFecha", d.id)); }
     alert(`Usuario ${codVendedor} eliminado.`);
     loadUsers();
-  } catch (err) { alert("Error al eliminar"); }
+  } catch (err) { 
+    alert("Error al eliminar"); 
+  } finally {
+    toggleLoader(false);
+  }
 };
 
-/* =================== CARGA CSV (LÓGICA BLINDADA) =================== */
+/* =================== CARGA CSV USUARIOS =================== */
 document.getElementById("uploadBtn").onclick = async () => {
   const file = document.getElementById("fileInput").files[0];
   if (!file) return alert("Selecciona CSV");
-  const text = await file.text();
   
-  // .filter(l => l.trim() !== "") elimina filas vacías al final que causan el error de padStart
-  const lines = text.trim().split("\n").slice(1).filter(line => line.trim() !== "");
+  toggleLoader(true);
+  try {
+    const text = await file.text();
+    const lines = text.trim().split("\n").slice(1).filter(line => line.trim() !== "");
 
-  for (const line of lines) {
-    const data = line.split(";").map(x => x.trim());
-    if (data.length < 5) continue; // Salta líneas incompletas para evitar errores
+    for (const line of lines) {
+      const data = line.split(";").map(x => x.trim());
+      if (data.length < 5) continue; 
 
-    const [fechaRaw, codVendedor, nombre, cedis, coins] = data;
-    if (!fechaRaw || !codVendedor) continue;
-    
-    const fechaNormal = normalizarFecha(fechaRaw);
+      const [fechaRaw, codVendedor, nombre, cedis, coins] = data;
+      if (!fechaRaw || !codVendedor) continue;
+      
+      const fechaNormal = normalizarFecha(fechaRaw);
 
-    await setDoc(doc(db, "usuariosPorFecha", `${fechaNormal}_${codVendedor}`), {
-      fecha: fechaNormal, 
-      codVendedor, 
-      nombre, 
-      cedis, 
-      coins_ganados: Number(coins) || 0, 
-      creado: Timestamp.now()
-    }, { merge: true });
+      await setDoc(doc(db, "usuariosPorFecha", `${fechaNormal}_${codVendedor}`), {
+        fecha: fechaNormal, 
+        codVendedor, 
+        nombre, 
+        cedis, 
+        coins_ganados: Number(coins.replace(/,/g, "")) || 0, 
+        creado: Timestamp.now()
+      }, { merge: true });
+    }
+    alert("Carga de usuarios completada");
+    loadUsers();
+  } catch (err) {
+    alert("Error al procesar el archivo");
+  } finally {
+    toggleLoader(false);
   }
-  alert("Carga completada");
-  loadUsers();
 };
 
 /* =================== TABLAS Y RENDERS =================== */
@@ -151,21 +164,31 @@ document.getElementById("btnExport").onclick = () => {
 document.getElementById("btnVerMov").onclick = async () => {
   const cod = document.getElementById("movCedula").value.trim();
   if(!cod) return alert("Escribe un código");
-  cacheMovimientos = await obtenerMovimientos(cod);
-  renderMov(cacheMovimientos);
+  toggleLoader(true);
+  try {
+    cacheMovimientos = await obtenerMovimientos(cod);
+    renderMov(cacheMovimientos);
+  } finally {
+    toggleLoader(false);
+  }
 };
 
 document.getElementById("btnVerTodosMov").onclick = async () => {
-  const snapUsers = await getDocs(collection(db, "usuariosPorFecha"));
-  const todosLosCodigos = [...new Set(snapUsers.docs.map(d => d.data().codVendedor))];
-  
-  let totalMovs = [];
-  for (const cod of todosLosCodigos) {
-    const m = await obtenerMovimientos(cod);
-    totalMovs = totalMovs.concat(m);
+  toggleLoader(true);
+  try {
+    const snapUsers = await getDocs(collection(db, "usuariosPorFecha"));
+    const todosLosCodigos = [...new Set(snapUsers.docs.map(d => d.data().codVendedor))];
+    
+    let totalMovs = [];
+    for (const cod of todosLosCodigos) {
+      const m = await obtenerMovimientos(cod);
+      totalMovs = totalMovs.concat(m);
+    }
+    cacheMovimientos = totalMovs.sort((a,b) => new Date(a.fec) - new Date(b.fec));
+    renderMov(cacheMovimientos);
+  } finally {
+    toggleLoader(false);
   }
-  cacheMovimientos = totalMovs.sort((a,b) => new Date(a.fec) - new Date(b.fec));
-  renderMov(cacheMovimientos);
 };
 
 async function obtenerMovimientos(cod) {
@@ -194,15 +217,32 @@ document.getElementById("btnExportMov").onclick = () => {
 document.getElementById("uploadProductBtn").onclick = async () => {
   const file = document.getElementById("productFileInput").files[0];
   if (!file) return;
-  const text = await file.text();
-  const lines = text.trim().split("\n").slice(1).filter(l => l.trim() !== "");
-  for (const line of lines) {
-    const parts = line.replace(/"/g, "").split(";");
-    if (parts.length < 2) continue;
-    const [nombre, coins] = parts;
-    await setDoc(doc(db, "productos", nombre.trim()), { producto: nombre.trim(), coins: Number(coins) || 0 });
+  
+  toggleLoader(true);
+  try {
+    const text = await file.text();
+    const lines = text.trim().split("\n").slice(1).filter(l => l.trim() !== "");
+    for (const line of lines) {
+      const parts = line.replace(/"/g, "").split(";");
+      if (parts.length < 2) continue;
+      const [nombre, coins] = parts;
+      
+      // Limpiamos comas de miles y aseguramos nombre limpio
+      const valorCoins = Number(coins.replace(/,/g, "")) || 0;
+      const nombreLimpio = nombre.trim();
+
+      await setDoc(doc(db, "productos", nombreLimpio), { 
+        producto: nombreLimpio, 
+        coins: valorCoins 
+      }, { merge: true });
+    }
+    alert("Inventario de productos actualizado");
+    loadProducts();
+  } catch (err) {
+    alert("Error al cargar productos");
+  } finally {
+    toggleLoader(false);
   }
-  loadProducts();
 };
 
 async function loadProducts() {
@@ -211,7 +251,7 @@ async function loadProducts() {
   body.innerHTML = "";
   snap.forEach(d => { 
     const p = d.data(); 
-    body.innerHTML += `<tr><td>${p.producto}</td><td><img src="assets/productos/${p.producto}.png" width="40"></td><td>${p.coins}</td></tr>`;
+    body.innerHTML += `<tr><td>${p.producto}</td><td><img src="assets/productos/${p.producto}.png" width="40" onerror="this.src='assets/logo.png'"></td><td>${p.coins}</td></tr>`;
   });
 }
 
