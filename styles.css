@@ -1,94 +1,170 @@
-/* ================= GLOBAL ADMIN ================= */
+/* ===================================================
+   ESTILOS BASE Y CONTENEDOR FULL-WIDTH
+   =================================================== */
 body {
-  font-family: 'Segoe UI', Arial, sans-serif;
-  margin: 0;
-  background: #f4f6f8;
-  color: #333;
+    margin: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f4f7f6;
+    color: #333;
+}
+
+/* Contenedor principal que permite el ancho total */
+.main-container {
+    width: 100%;
+    max-width: 1400px; /* Ajusta este valor si quieres que estire aún más */
+    margin: 0 auto;
+    padding: 20px;
+    box-sizing: border-box;
 }
 
 .topBar {
-  background: #007a5a;
-  color: white;
-  padding: 15px;
-  font-size: 20px;
-  font-weight: bold;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    background-color: #007a5a;
+    color: white;
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    font-weight: bold;
+    font-size: 1.2rem;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
 }
 
-.logo { height: 35px; }
+.logo {
+    height: 40px;
+}
+
+/* ===================================================
+   DISEÑO DE CUENTA (SIDEBAR + CONTENIDO)
+   =================================================== */
+
+/* Desktop: Sidebar a la izquierda, Tienda a la derecha */
+.user-layout {
+    display: grid;
+    grid-template-columns: 300px 1fr; /* Sidebar fija y contenido flexible */
+    gap: 25px;
+    align-items: start;
+}
+
+/* Responsivo para Celulares: Todo en una sola columna */
+@media (max-width: 768px) {
+    .user-layout {
+        grid-template-columns: 1fr;
+    }
+    
+    .main-container {
+        padding: 10px;
+    }
+}
 
 .card {
-  max-width: 1100px;
-  margin: 20px auto;
-  background: white;
-  padding: 25px;
-  border-radius: 12px;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    margin-bottom: 20px;
 }
 
-h2 { color: #007a5a; border-bottom: 2px solid #f1f1f1; padding-bottom: 10px; margin-top: 0; }
+.hidden { display: none !important; }
 
-/* ================= TABLAS ================= */
-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 15px;
-  font-size: 13px;
+/* ===================================================
+   TIENDA (PRODUCTOS EN GRILLA)
+   =================================================== */
+.tienda {
+    display: grid;
+    /* Ajusta automáticamente cuántos productos caben según el ancho */
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 20px;
 }
 
-th {
-  background: #007a5a;
-  color: white;
-  padding: 12px 10px;
-  text-align: left;
+/* Estilo de cada producto individual */
+.producto-card {
+    border: 1px solid #eee;
+    padding: 15px;
+    border-radius: 10px;
+    text-align: center;
+    transition: transform 0.2s;
 }
 
-td {
-  padding: 10px;
-  border-bottom: 1px solid #eee;
+.producto-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
 }
 
-tr:hover { background: #f9fdfc; }
+.producto-card img {
+    max-width: 100%;
+    height: 150px;
+    object-fit: contain;
+}
 
-/* ================= BOTONES Y FILTROS ================= */
+/* ===================================================
+   LOADER (SPINNER ANIMADO)
+   =================================================== */
+.loader {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(255, 255, 255, 0.9);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+.spinner {
+    width: 50px;
+    height: 50px;
+    border: 5px solid #f3f3f3;
+    border-top: 5px solid #007a5a;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* ===================================================
+   BOTONES E INPUTS
+   =================================================== */
 button {
-  padding: 8px 16px;
-  background: #007a5a;
-  border: none;
-  color: white;
-  border-radius: 6px;
-  font-weight: bold;
-  cursor: pointer;
-  transition: 0.2s;
+    background-color: #007a5a;
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    width: 100%;
+    transition: background 0.3s;
 }
 
-button:hover { background: #005a44; }
+button:hover { background-color: #005f45; }
 
-button.btn-eliminar {
-  background: #d9534f;
-  padding: 5px 10px;
-  font-size: 11px;
-}
-
-button.btn-eliminar:hover { background: #c9302c; }
-
-.filtros {
-  display: flex;
-  gap: 15px;
-  margin-bottom: 20px;
-  background: #fcfcfc;
-  padding: 15px;
-  border-radius: 8px;
-  border: 1px solid #eee;
-  flex-wrap: wrap;
-}
+button.sec { background-color: #666; }
 
 input {
-  padding: 8px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
+    width: 100%;
+    padding: 12px;
+    margin: 8px 0;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    box-sizing: border-box;
+}
+
+.saldoHead {
+    background: #e6f2ef;
+    padding: 20px;
+    border-radius: 10px;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.saldoHead strong {
+    display: block;
+    font-size: 2.5rem;
+    color: #007a5a;
 }
