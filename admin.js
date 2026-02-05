@@ -21,11 +21,24 @@ let cacheUsuarios = [];
 let cacheCompras = [];
 let cacheMovimientos = [];
 
-/* =================== UTILIDADES =================== */
+/* =================== UTILIDADES CORREGIDAS =================== */
 function normalizarFecha(fecha) {
+  // Protección: Si la fecha es nula, vacía o no es texto, evitar error de padStart
+  if (!fecha || typeof fecha !== "string" || fecha.trim() === "") return "2026-01-01";
+  
   if (fecha.includes("-")) return fecha;
-  const [d, m, y] = fecha.split("/");
-  return `${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`;
+  
+  const partes = fecha.split("/");
+  // Si no tiene el formato D/M/Y esperado, devolvemos el valor original para evitar romper el flujo
+  if (partes.length < 3) return fecha;
+
+  const [d, m, y] = partes;
+  // Aplicamos padStart solo asegurando que d y m existan
+  const dia = (d || "01").padStart(2, "0");
+  const mes = (m || "01").padStart(2, "0");
+  const anio = y || "2026";
+  
+  return `${anio}-${mes}-${dia}`;
 }
 
 function descargarCSV(nombre, filas) {
@@ -49,17 +62,31 @@ window.eliminarUsuarioTotal = async (codVendedor) => {
   } catch (err) { alert("Error al eliminar"); }
 };
 
-/* =================== CARGA CSV =================== */
+/* =================== CARGA CSV (LÓGICA BLINDADA) =================== */
 document.getElementById("uploadBtn").onclick = async () => {
   const file = document.getElementById("fileInput").files[0];
   if (!file) return alert("Selecciona CSV");
   const text = await file.text();
-  const lines = text.trim().split("\n").slice(1);
+  
+  // .filter(l => l.trim() !== "") elimina filas vacías al final que causan el error de padStart
+  const lines = text.trim().split("\n").slice(1).filter(line => line.trim() !== "");
+
   for (const line of lines) {
-    const [fechaRaw, codVendedor, nombre, cedis, coins] = line.split(";").map(x => x.trim());
+    const data = line.split(";").map(x => x.trim());
+    if (data.length < 5) continue; // Salta líneas incompletas para evitar errores
+
+    const [fechaRaw, codVendedor, nombre, cedis, coins] = data;
     if (!fechaRaw || !codVendedor) continue;
-    await setDoc(doc(db, "usuariosPorFecha", `${normalizarFecha(fechaRaw)}_${codVendedor}`), {
-      fecha: normalizarFecha(fechaRaw), codVendedor, nombre, cedis, coins_ganados: Number(coins), creado: Timestamp.now()
+    
+    const fechaNormal = normalizarFecha(fechaRaw);
+
+    await setDoc(doc(db, "usuariosPorFecha", `${fechaNormal}_${codVendedor}`), {
+      fecha: fechaNormal, 
+      codVendedor, 
+      nombre, 
+      cedis, 
+      coins_ganados: Number(coins) || 0, 
+      creado: Timestamp.now()
     }, { merge: true });
   }
   alert("Carga completada");
@@ -120,7 +147,7 @@ document.getElementById("btnExport").onclick = () => {
   descargarCSV("reporte_compras.csv", filas);
 };
 
-/* =================== MOVIMIENTOS (EL ARREGLO QUE PEDISTE) =================== */
+/* =================== MOVIMIENTOS =================== */
 document.getElementById("btnVerMov").onclick = async () => {
   const cod = document.getElementById("movCedula").value.trim();
   if(!cod) return alert("Escribe un código");
@@ -168,10 +195,12 @@ document.getElementById("uploadProductBtn").onclick = async () => {
   const file = document.getElementById("productFileInput").files[0];
   if (!file) return;
   const text = await file.text();
-  const lines = text.trim().split("\n").slice(1);
+  const lines = text.trim().split("\n").slice(1).filter(l => l.trim() !== "");
   for (const line of lines) {
-    const [nombre, coins] = line.replace(/"/g, "").split(";");
-    await setDoc(doc(db, "productos", nombre.trim()), { producto: nombre.trim(), coins: Number(coins) });
+    const parts = line.replace(/"/g, "").split(";");
+    if (parts.length < 2) continue;
+    const [nombre, coins] = parts;
+    await setDoc(doc(db, "productos", nombre.trim()), { producto: nombre.trim(), coins: Number(coins) || 0 });
   }
   loadProducts();
 };
@@ -180,7 +209,10 @@ async function loadProducts() {
   const snap = await getDocs(collection(db, "productos"));
   const body = document.querySelector("#productsTable tbody");
   body.innerHTML = "";
-  snap.forEach(d => { const p = d.data(); body.innerHTML += `<tr><td>${p.producto}</td><td><img src="assets/productos/${p.producto}.png" width="40"></td><td>${p.coins}</td></tr>`; });
+  snap.forEach(d => { 
+    const p = d.data(); 
+    body.innerHTML += `<tr><td>${p.producto}</td><td><img src="assets/productos/${p.producto}.png" width="40"></td><td>${p.coins}</td></tr>`;
+  });
 }
 
 // Iniciar todo
