@@ -16,6 +16,7 @@ const loginCard = document.getElementById('login');
 const cuentaCard = document.getElementById('cuenta');
 const cedulaInput = document.getElementById('cedulaInput'); 
 const passwordInput = document.getElementById('passwordInput');
+const cedisInput = document.getElementById('cedisInput'); // NUEVO: Selector de CEDIS
 const ingresarBtn = document.getElementById('ingresarBtn');
 const cerrarBtn = document.getElementById('cerrarBtn');
 const btnCambiarPass = document.getElementById('btnCambiarPass');
@@ -25,7 +26,7 @@ const errorMsg = document.getElementById('errorMsg');
 const tiendaDiv = document.getElementById('productosTienda');
 const carritoList = document.getElementById('carritoList');
 const bolsaSpan = document.getElementById('bolsa');
-const movimientosBody = document.getElementById('movimientosBody'); // Referencia a la nueva tabla
+const movimientosBody = document.getElementById('movimientosBody'); 
 const loader = document.getElementById('loader');
 const modalCorreo = document.getElementById('modalCorreo');
 const modalRecuperar = document.getElementById('modalRecuperar');
@@ -36,6 +37,7 @@ let carrito = [];
 let userCod = ''; 
 let userNombre = '';
 let userCedis = '';
+let userLoginId = ''; // Identificador único (cod_cedis)
 let codigoGenerado = "";
 
 /* ================= EVENTOS ================= */
@@ -64,12 +66,13 @@ function ocultarLoader(){
 }
 
 /* ================= CREDENCIALES ================= */
-async function crearCredencialSiNoExiste(cod){
-  const ref = db.collection("credenciales").doc(cod);
+// Ahora usamos un ID que combina código y cedis para evitar duplicados entre sedes
+async function crearCredencialSiNoExiste(loginId, codOriginal){
+  const ref = db.collection("credenciales").doc(loginId);
   const doc = await ref.get();
   if(!doc.exists){
     await ref.set({
-      password: cod, 
+      password: codOriginal, 
       creado: firebase.firestore.FieldValue.serverTimestamp(),
       email: "",
       requiereCambio: true 
@@ -77,8 +80,8 @@ async function crearCredencialSiNoExiste(cod){
   }
 }
 
-async function obtenerCredencial(cod){
-  const doc = await db.collection("credenciales").doc(cod).get();
+async function obtenerCredencial(loginId){
+  const doc = await db.collection("credenciales").doc(loginId).get();
   return doc.exists ? doc.data() : null;
 }
 
@@ -86,25 +89,33 @@ async function obtenerCredencial(cod){
 async function buscarUsuario(){
   const cod = cedulaInput.value.trim();
   const pass = passwordInput.value.trim();
+  const cedisSel = cedisInput.value; // Obtener CEDIS seleccionado
 
-  if(!cod || !pass){
-    errorMsg.textContent='Código y contraseña obligatorios';
+  if(!cod || !pass || !cedisSel){
+    errorMsg.textContent='Código, contraseña y CEDIS obligatorios';
     return;
   }
 
   mostrarLoader('Verificando credenciales…');
 
   try{
-    const snap = await db.collection('usuariosPorFecha').where('codVendedor','==',cod).get();
+    // Buscamos al usuario que coincida con CÓDIGO y CEDIS
+    const snap = await db.collection('usuariosPorFecha')
+                         .where('codVendedor','==',cod)
+                         .where('cedis','==',cedisSel)
+                         .get();
     
     if(snap.empty){
-      errorMsg.textContent='Código de vendedor no encontrado';
+      errorMsg.textContent='Usuario no encontrado en este CEDIS';
       ocultarLoader();
       return;
     }
 
-    await crearCredencialSiNoExiste(cod);
-    const cred = await obtenerCredencial(cod);
+    // Creamos un ID único para el login combinando ambos datos
+    userLoginId = `${cod}_${cedisSel}`;
+
+    await crearCredencialSiNoExiste(userLoginId, cod);
+    const cred = await obtenerCredencial(userLoginId);
 
     if(cred.password !== pass){
       errorMsg.textContent='Contraseña incorrecta';
@@ -113,6 +124,7 @@ async function buscarUsuario(){
     }
 
     userCod = cod;
+    userCedis = cedisSel;
 
     if (cred.requiereCambio === true) {
         ocultarLoader();
@@ -122,7 +134,7 @@ async function buscarUsuario(){
             return;
         }
         mostrarLoader('Actualizando...');
-        await db.collection("credenciales").doc(userCod).update({ 
+        await db.collection("credenciales").doc(userLoginId).update({ 
             password: nueva,
             requiereCambio: false 
         });
@@ -137,26 +149,29 @@ async function buscarUsuario(){
         return; 
     }
 
-    let totalCoins=0, fechaMasReciente='', nombre='', cedis='';
+    // Calcular saldos filtrando por el usuario específico de ese CEDIS
+    let totalCoins=0, fechaMasReciente='', nombre='';
     snap.forEach(doc=>{
       const d=doc.data();
       totalCoins += Number(d.coins_ganados);
       if(!fechaMasReciente || new Date(d.fecha)>new Date(fechaMasReciente)){
         fechaMasReciente=d.fecha;
         nombre=d.nombre;
-        cedis=d.cedis;
       }
     });
 
-    const snapCompras = await db.collection('compras').where('codVendedor','==',cod).get();
+    // Filtramos compras también por COD y CEDIS
+    const snapCompras = await db.collection('compras')
+                                .where('codVendedor','==',cod)
+                                .where('cedis','==',cedisSel)
+                                .get();
     let totalGastado=0;
     snapCompras.forEach(d=> totalGastado += Number(d.data().total));
 
     coinsUsuario = totalCoins - totalGastado;
     userNombre = nombre;
-    userCedis = cedis;
 
-    mostrarDatos({fecha:fechaMasReciente, codigo:cod, nombre, cedis});
+    mostrarDatos({fecha:fechaMasReciente, codigo:cod, nombre, cedis:cedisSel});
     coinsP.textContent = coinsUsuario;
 
     await cargarProductos();
@@ -175,16 +190,21 @@ async function guardarEmail() {
     const email = document.getElementById('emailRegistroInput').value.trim();
     if (!email.includes("@")) return alert("Ingresa un correo válido");
     mostrarLoader('Guardando...');
-    await db.collection("credenciales").doc(userCod).update({ email: email });
+    await db.collection("credenciales").doc(userLoginId).update({ email: email });
     location.reload();
 }
 
 async function flujoEnviarCodigo() {
     const cod = document.getElementById('codRecuperar').value.trim();
+    const cedisRec = document.getElementById('cedisRecuperar').value; // Necesitarás este campo en el modal de recuperar
     const email = document.getElementById('emailRecuperar').value.trim();
+    
+    const recoveryId = `${cod}_${cedisRec}`;
+    
     mostrarLoader('Enviando código...');
-    const cred = await obtenerCredencial(cod);
+    const cred = await obtenerCredencial(recoveryId);
     if (!cred || cred.email !== email) { ocultarLoader(); return alert("Los datos no coinciden."); }
+    
     codigoGenerado = Math.floor(100000 + Math.random() * 900000).toString();
     const templateParams = { user_name: cod, user_email: email, recovery_code: codigoGenerado };
     try {
@@ -198,14 +218,18 @@ async function flujoEnviarCodigo() {
 async function restablecerPassword() {
     const codIn = document.getElementById('codigoVerificacionInput').value.trim();
     const pass = document.getElementById('nuevaPassInput').value.trim();
-    const user = document.getElementById('codRecuperar').value.trim();
+    const codUser = document.getElementById('codRecuperar').value.trim();
+    const cedisUser = document.getElementById('cedisRecuperar').value;
+    
+    const recoveryId = `${codUser}_${cedisUser}`;
+
     if (codIn !== codigoGenerado) return alert("Código incorrecto");
-    await db.collection("credenciales").doc(user).update({ password: pass, requiereCambio: false });
+    await db.collection("credenciales").doc(recoveryId).update({ password: pass, requiereCambio: false });
     alert("Contraseña restablecida correctamente.");
     location.reload();
 }
 
-/* ================= MOVIMIENTOS DETALLADOS (ESTILO ADMIN) ================= */
+/* ================= HISTORIAL DETALLADO ================= */
 async function cargarHistorial() {
   movimientosBody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px;">Cargando movimientos...</td></tr>';
   
@@ -213,8 +237,10 @@ async function cargarHistorial() {
     let movimientos = [];
     let saldoCalc = 0;
 
-    // 1. Obtener CARGAS
-    const snapIngresos = await db.collection('usuariosPorFecha').where('codVendedor', '==', userCod).get();
+    const snapIngresos = await db.collection('usuariosPorFecha')
+                                 .where('codVendedor', '==', userCod)
+                                 .where('cedis', '==', userCedis)
+                                 .get();
     snapIngresos.forEach(doc => {
       const d = doc.data();
       movimientos.push({
@@ -224,8 +250,10 @@ async function cargarHistorial() {
       });
     });
 
-    // 2. Obtener COMPRAS
-    const snapCompras = await db.collection('compras').where('codVendedor', '==', userCod).get();
+    const snapCompras = await db.collection('compras')
+                                .where('codVendedor', '==', userCod)
+                                .where('cedis', '==', userCedis)
+                                .get();
     snapCompras.forEach(doc => {
       const c = doc.data();
       const fechaC = c.fecha.toDate().toISOString().slice(0, 10);
@@ -236,10 +264,8 @@ async function cargarHistorial() {
       });
     });
 
-    // 3. Ordenar por fecha (Antiguo a Reciente)
     movimientos.sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
 
-    // 4. Renderizar
     movimientosBody.innerHTML = '';
     if (movimientos.length === 0) {
       movimientosBody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px;">Sin movimientos</td></tr>';
@@ -321,18 +347,25 @@ async function confirmarCompra(){
   cerrarModal();
   mostrarLoader('Procesando...');
   try{
-    await db.collection('compras').add({ codVendedor: userCod, nombre: userNombre, cedis: userCedis, items: carrito, total: total, fecha: firebase.firestore.FieldValue.serverTimestamp() });
+    await db.collection('compras').add({ 
+        codVendedor: userCod, 
+        nombre: userNombre, 
+        cedis: userCedis, 
+        items: carrito, 
+        total: total, 
+        fecha: firebase.firestore.FieldValue.serverTimestamp() 
+    });
     coinsUsuario -= total;
     coinsP.textContent = coinsUsuario;
     carrito = [];
     renderCarrito();
-    await cargarHistorial(); // Actualiza la tabla de movimientos tras la compra
+    await cargarHistorial();
   }catch(err){ alert('Error'); }finally{ ocultarLoader(); }
 }
 
 async function cambiarPassword(){
   const nueva = prompt("Nueva contraseña:");
   if(!nueva || nueva.length < 4) return;
-  await db.collection("credenciales").doc(userCod).update({ password: nueva });
+  await db.collection("credenciales").doc(userLoginId).update({ password: nueva });
   alert("Cambiado.");
 }
