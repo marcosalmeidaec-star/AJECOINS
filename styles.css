@@ -8,7 +8,6 @@ body {
     color: #333;
 }
 
-/* Contenedor principal: Se expande en el panel Admin */
 .main-container {
     width: 95%;
     max-width: 1600px; 
@@ -35,20 +34,54 @@ body {
     height: 40px;
 }
 
-/* ================= CARDS (SIN RESTRICCIÓN DE ANCHO) ================= */
+/* ================= CARDS COLAPSABLES ================= */
 .card {
     background: white;
-    padding: 25px;
+    padding: 0; /* Cambiado para que el h2 ocupe todo el ancho */
     border-radius: 12px;
     box-shadow: 0 4px 15px rgba(0,0,0,0.05);
     margin-bottom: 25px;
     width: 100%; 
     box-sizing: border-box;
+    overflow: hidden;
+}
+
+/* Franja verde interactiva */
+.collapsible {
+    background-color: #007a5a;
+    color: white;
+    margin: 0;
+    padding: 15px 25px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 1.1rem;
+    transition: background 0.3s;
+}
+
+.collapsible:hover {
+    background-color: #005f45;
+}
+
+/* Contenedor del contenido interno */
+.card-content {
+    padding: 25px;
+    max-height: 5000px; /* Suficiente para tablas largas */
+    overflow: hidden;
+    transition: max-height 0.4s ease-in-out, padding 0.4s;
+}
+
+/* Estado cerrado */
+.card.closed .card-content {
+    max-height: 0;
+    padding-top: 0;
+    padding-bottom: 0;
 }
 
 .hidden { display: none !important; }
 
-/* ================= TABLAS DEL ADMIN ================= */
+/* ================= TABLAS ================= */
 table {
     width: 100%;
     border-collapse: collapse;
@@ -69,11 +102,8 @@ th {
     font-size: 12px;
 }
 
-tr:nth-child(even) {
-    background-color: #fcfcfc;
-}
+tr:nth-child(even) { background-color: #fcfcfc; }
 
-/* ================= FILTROS LADO A LADO ================= */
 .filtros {
     display: flex;
     flex-wrap: wrap;
@@ -89,13 +119,13 @@ tr:nth-child(even) {
     border-radius: 8px;
 }
 
-/* ================= LOADER (CORREGIDO) ================= */
+/* ================= LOADER ================= */
 .loader {
     position: fixed;
     top: 0; left: 0;
     width: 100%; height: 100%;
     background: rgba(255, 255, 255, 0.9);
-    display: none; /* Se activa con .active desde JS */
+    display: none; 
     flex-direction: column;
     align-items: center;
     justify-content: center;
@@ -119,7 +149,6 @@ tr:nth-child(even) {
     100% { transform: rotate(360deg); }
 }
 
-/* ================= BOTONES E INPUTS ================= */
 button {
     background-color: #007a5a;
     color: white;
