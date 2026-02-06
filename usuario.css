@@ -1,12 +1,21 @@
 /* ================= GLOBAL ================= */
 body {
-  font-family: Arial, sans-serif;
+  font-family: 'Segoe UI', Arial, sans-serif;
   background: #f4f6f8;
   margin: 0;
   color: #333;
 }
 
 .hidden { display: none !important; }
+
+/* Contenedor principal adaptable */
+.main-container {
+  width: 95%;
+  max-width: 1400px;
+  margin: 20px auto;
+  padding: 10px;
+  box-sizing: border-box;
+}
 
 /* ================= TOP BAR ================= */
 .topBar {
@@ -20,6 +29,9 @@ body {
   align-items: center;
   justify-content: center;
   gap: 10px;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
 }
 
 .logo {
@@ -28,13 +40,44 @@ body {
 }
 
 /* ================= CARDS ================= */
+/* Card estándar para el Login */
 .card {
-  max-width: 480px; /* Un poco más ancho para la tabla */
-  margin: 20px auto;
+  max-width: 480px;
+  margin: 40px auto;
   background: white;
-  padding: 20px;
+  padding: 25px;
   border-radius: 12px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+/* Card amplia para la cuenta del usuario */
+.card-wide {
+  background: white;
+  padding: 25px;
+  border-radius: 15px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* ================= DISEÑO DE DISEÑO HORIZONTAL ================= */
+.user-layout {
+  display: flex;
+  flex-direction: row;
+  gap: 30px;
+  align-items: flex-start;
+}
+
+.user-sidebar {
+  flex: 0 0 300px; /* Ancho fijo para datos y carrito */
+  background: #fcfcfc;
+  padding: 20px;
+  border-radius: 12px;
+  border: 1px solid #eee;
+}
+
+.user-content {
+  flex: 1; /* La tienda toma todo el espacio restante */
 }
 
 /* ================= BOTONES ================= */
@@ -47,12 +90,11 @@ button {
   border-radius: 8px;
   font-weight: bold;
   cursor: pointer;
-  transition: background 0.2s ease, transform 0.2s ease;
+  transition: background 0.2s ease;
 }
 
 button:hover {
   background: #005a44;
-  transform: translateY(-2px);
 }
 
 button.sec {
@@ -60,43 +102,55 @@ button.sec {
   color: black;
 }
 
-button.sec:hover {
-  background: #bbb;
-  transform: translateY(-2px);
-}
-
 /* ================= INPUTS ================= */
-input {
+input, select {
   width: 100%;
   padding: 12px;
   margin-bottom: 10px;
   border-radius: 8px;
   border: 1px solid #ddd;
   font-size: 14px;
-  box-sizing: border-box; /* Evita que el input se salga del card */
+  box-sizing: border-box;
 }
 
-/* ================= TIENDA ================= */
+/* ================= TIENDA (CUADRÍCULA FLEXIBLE) ================= */
 .tienda {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
+  /* Crea columnas automáticas de mínimo 220px */
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 20px;
 }
 
 .tarjeta {
+  background: white;
   border: 1px solid #eee;
-  padding: 12px;
-  border-radius: 10px;
+  padding: 20px;
+  border-radius: 12px;
   text-align: center;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
   transition: transform 0.2s ease;
 }
 
+.tarjeta:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
 .tarjeta img {
-  max-width: 100%;
-  height: auto;
-  border-radius: 6px;
-  margin-bottom: 8px;
+  width: 100%;
+  height: 160px;
+  object-fit: contain; /* Ajusta la imagen sin deformar */
+  margin-bottom: 12px;
+}
+
+.tarjeta h4 {
+  font-size: 15px;
+  margin: 10px 0;
+  height: 40px; /* Alinea los títulos */
+  overflow: hidden;
 }
 
 /* ================= SALDO Y DATOS ================= */
@@ -105,14 +159,14 @@ input {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 15px;
-  padding: 10px;
-  background: #f1f8f6;
-  border-radius: 8px;
+  padding: 15px;
+  background: #007a5a;
+  color: white;
+  border-radius: 10px;
 }
 
 .saldoHead strong {
   font-size: 1.8em;
-  color: #007a5a;
 }
 
 ul.datos {
@@ -122,74 +176,58 @@ ul.datos {
 }
 
 ul.datos li {
-  padding: 8px 0;
+  padding: 10px 0;
   border-bottom: 1px solid #eee;
-  font-size: 14px;
+  font-size: 13px;
 }
 
-/* ================= TABLA DE MOVIMIENTOS ================= */
+/* ================= CARRITO ================= */
+.carrito {
+  list-style: none;
+  padding: 0;
+  margin: 10px 0;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.carrito li {
+  font-size: 13px;
+  display: flex;
+  justify-content: space-between;
+  padding: 5px 0;
+  border-bottom: 1px dashed #ddd;
+}
+
+/* ================= MOVIMIENTOS ================= */
 #tablaMovimientosUsuario {
-  margin-top: 15px;
+  width: 100%;
+  border-collapse: collapse;
+}
+
+#tablaMovimientosUsuario th, #tablaMovimientosUsuario td {
+  padding: 12px;
   border: 1px solid #eee;
 }
 
-#tablaMovimientosUsuario th {
-  font-weight: bold;
-  text-transform: uppercase;
-  font-size: 11px;
-  letter-spacing: 0.5px;
-}
-
-#tablaMovimientosUsuario tr:nth-child(even) {
-  background-color: #f9f9f9;
-}
-
-/* Estilo para que la tabla sea legible en móvil */
-@media (max-width: 400px) {
-  #tablaMovimientosUsuario {
-    font-size: 11px;
-  }
-}
-
-/* ================= MODALES ================= */
+/* ================= MODALES Y OTROS ================= */
 .modal {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.5); /* Más oscuro para resaltar el modal */
+  background: rgba(0,0,0,0.6);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 2000;
-  padding: 15px;
 }
 
 .modal-content {
   background: white;
   padding: 25px;
   border-radius: 15px;
-  max-width: 380px;
-  width: 100%;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+  max-width: 400px;
+  width: 90%;
 }
 
-.modal h4 { margin-top: 0; color: #007a5a; }
-
-/* ================= SEGURIDAD ================= */
-.passwordBox {
-  background: #fff4f4;
-  padding: 15px;
-  border-radius: 10px;
-  margin: 15px 0;
-  border: 1px solid #ffebeb;
-}
-
-.passwordBox h4 {
-  margin: 0 0 10px 0;
-  color: #d9534f;
-  font-size: 14px;
-}
-
-/* ================= LOADER ================= */
 .loader {
   position: fixed;
   inset: 0;
@@ -210,11 +248,18 @@ ul.datos li {
   border-top: 5px solid #007a5a;
   border-radius: 50%;
   animation: spin 1s linear infinite;
-  margin-bottom: 15px;
 }
 
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
+@keyframes spin { to { transform: rotate(360deg); } }
 
-.error { color: #d9534f; font-weight: bold; text-align: center; }
+/* ================= RESPONSIVO ================= */
+@media (max-width: 900px) {
+  .user-layout {
+    flex-direction: column;
+  }
+  .user-sidebar {
+    flex: 1 1 100%;
+    width: 100%;
+    box-sizing: border-box;
+  }
+}
