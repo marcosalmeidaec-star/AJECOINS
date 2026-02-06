@@ -63,6 +63,28 @@
 
         <ul id="datos" class="datos"></ul>
 
+        <div class="acordeon-contenedor">
+            <button id="btnDesplegarHistorial" class="btn-acordeon">
+                📜 Ver mis movimientos <span>+</span>
+            </button>
+            
+            <div id="historialAcordeon" class="card-content-desplegable hidden">
+                <div style="overflow-x:auto;">
+                    <table id="tablaMovimientosUsuario" style="width:100%; border-collapse: collapse; font-size: 13px;">
+                        <thead>
+                            <tr style="background-color: #007a5a; color: white;">
+                                <th style="padding: 10px; text-align: left;">Fecha</th>
+                                <th style="padding: 10px; text-align: left;">Concepto</th>
+                                <th style="padding: 10px; text-align: center;">Coins</th>
+                                <th style="padding: 10px; text-align: center;">Saldo</th>
+                            </tr>
+                        </thead>
+                        <tbody id="movimientosBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
         <div class="passwordBox">
           <h4>🔐 Seguridad</h4>
           <button id="btnCambiarPass">Cambiar contraseña</button>
@@ -77,24 +99,6 @@
       <div class="user-content">
         <h3>Tienda de Premios</h3>
         <div id="productosTienda" class="tienda"></div>
-
-        <hr style="margin: 25px 0; border: 0; border-top: 1px solid #eee;">
-
-        <h3>Mis Movimientos</h3>
-        <div style="overflow-x:auto;">
-          <table id="tablaMovimientosUsuario" style="width:100%; border-collapse: collapse; font-size: 13px;">
-            <thead>
-              <tr style="background-color: #007a5a; color: white;">
-                <th style="padding: 10px; text-align: left;">Fecha</th>
-                <th style="padding: 10px; text-align: left;">Concepto</th>
-                <th style="padding: 10px; text-align: center;">Coins</th>
-                <th style="padding: 10px; text-align: center;">Saldo</th>
-              </tr>
-            </thead>
-            <tbody id="movimientosBody">
-            </tbody>
-          </table>
-        </div>
       </div>
     </div>
 
