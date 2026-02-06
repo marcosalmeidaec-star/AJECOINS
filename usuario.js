@@ -16,7 +16,7 @@ const loginCard = document.getElementById('login');
 const cuentaCard = document.getElementById('cuenta');
 const cedulaInput = document.getElementById('cedulaInput'); 
 const passwordInput = document.getElementById('passwordInput');
-const cedisInput = document.getElementById('cedisInput'); // Selector dinámico
+const cedisInput = document.getElementById('cedisInput'); 
 const ingresarBtn = document.getElementById('ingresarBtn');
 const cerrarBtn = document.getElementById('cerrarBtn');
 const btnCambiarPass = document.getElementById('btnCambiarPass');
@@ -30,7 +30,7 @@ const movimientosBody = document.getElementById('movimientosBody');
 const loader = document.getElementById('loader');
 const modalCorreo = document.getElementById('modalCorreo');
 const modalRecuperar = document.getElementById('modalRecuperar');
-const cedisRecuperar = document.getElementById('cedisRecuperar'); // Selector dinámico en modal
+const cedisRecuperar = document.getElementById('cedisRecuperar'); 
 
 /* ================= VARIABLES GLOBALES ================= */
 let coinsUsuario = 0;
@@ -38,11 +38,10 @@ let carrito = [];
 let userCod = ''; 
 let userNombre = '';
 let userCedis = '';
-let userLoginId = ''; // Formato: cod_cedis
+let userLoginId = ''; 
 let codigoGenerado = "";
 
 /* ================= INICIO / CARGA DE CEDIS ================= */
-// Esta función lee la colección de usuarios y extrae los CEDIS únicos
 async function cargarCedisDinamicos() {
     try {
         const snap = await db.collection('usuariosPorFecha').get();
@@ -73,7 +72,6 @@ async function cargarCedisDinamicos() {
     }
 }
 
-// Ejecutar carga de sedes al abrir la página
 cargarCedisDinamicos();
 
 /* ================= EVENTOS ================= */
@@ -134,7 +132,6 @@ async function buscarUsuario(){
   mostrarLoader('Verificando credenciales…');
 
   try{
-    // Búsqueda cruzada por código Y sede
     const snap = await db.collection('usuariosPorFecha')
                          .where('codVendedor','==',cod)
                          .where('cedis','==',cedisSel)
@@ -265,7 +262,7 @@ async function restablecerPassword() {
 
 /* ================= HISTORIAL ================= */
 async function cargarHistorial() {
-  movimientosBody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px;">Cargando movimientos...</td></tr>';
+  movimientosBody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:10px;">Cargando...</td></tr>';
   try {
     let movimientos = [];
     let saldoCalc = 0;
@@ -293,7 +290,7 @@ async function cargarHistorial() {
     movimientosBody.innerHTML = '';
     
     if (movimientos.length === 0) {
-      movimientosBody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px;">Sin movimientos</td></tr>';
+      movimientosBody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:10px;">Sin movimientos</td></tr>';
       return;
     }
 
@@ -302,10 +299,10 @@ async function cargarHistorial() {
       const colorC = m.coins >= 0 ? '#007a5a' : '#d9534f';
       const tr = document.createElement('tr');
       tr.innerHTML = `
-        <td style="padding:10px; border-bottom:1px solid #eee;">${m.fecha}</td>
-        <td style="padding:10px; border-bottom:1px solid #eee;">${m.concepto}</td>
-        <td style="padding:10px; border-bottom:1px solid #eee; text-align:center; color:${colorC}; font-weight:bold;">${m.coins >= 0 ? '+' : ''}${m.coins}</td>
-        <td style="padding:10px; border-bottom:1px solid #eee; text-align:center; font-weight:bold;">${saldoCalc}</td>
+        <td style="padding:8px; border-bottom:1px solid #eee;">${m.fecha}</td>
+        <td style="padding:8px; border-bottom:1px solid #eee;">${m.concepto}</td>
+        <td style="padding:8px; border-bottom:1px solid #eee; text-align:center; color:${colorC}; font-weight:bold;">${m.coins >= 0 ? '+' : ''}${m.coins}</td>
+        <td style="padding:8px; border-bottom:1px solid #eee; text-align:center; font-weight:bold;">${saldoCalc}</td>
       `;
       movimientosBody.appendChild(tr);
     });
@@ -387,4 +384,14 @@ async function cambiarPassword(){
   if(!nueva || nueva.length < 4) return;
   await db.collection("credenciales").doc(userLoginId).update({ password: nueva });
   alert("Cambiado.");
+}
+
+// LOGICA ACORDEÓN
+const btnH = document.getElementById('btnDesplegarHistorial');
+if(btnH){
+    btnH.onclick = () => {
+        const panel = document.getElementById('historialAcordeon');
+        panel.classList.toggle('hidden');
+        btnH.querySelector('span').innerText = panel.classList.contains('hidden') ? '+' : '−';
+    };
 }
