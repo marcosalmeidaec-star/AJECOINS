@@ -56,11 +56,9 @@ window.eliminarUsuarioTotal = async (codVendedor, cedis) => {
   if (!confirm(`⚠️ ¿ELIMINAR acceso y coins del vendedor ${codVendedor} en ${cedis}?`)) return;
   toggleLoader(true);
   try {
-    // La credencial ahora se identifica como cod_cedis
     const loginId = `${codVendedor}_${cedis}`;
     await deleteDoc(doc(db, "credenciales", loginId));
     
-    // Borrar solo las cargas de ese vendedor en ese CEDIS específico
     const q = query(collection(db, "usuariosPorFecha"), 
                     where("codVendedor", "==", codVendedor),
                     where("cedis", "==", cedis));
@@ -96,7 +94,6 @@ document.getElementById("uploadBtn").onclick = async () => {
       const fechaNormal = normalizarFecha(fechaRaw);
       const cedisLimpio = cedis.toUpperCase();
 
-      // ID ÚNICO DE CARGA: fecha_cod_cedis para evitar duplicados entre sedes
       const idDoc = `${fechaNormal}_${codVendedor}_${cedisLimpio.replace(/\s+/g, '')}`;
 
       await setDoc(doc(db, "usuariosPorFecha", idDoc), {
@@ -131,7 +128,6 @@ function renderListaMaestra(lista) {
   if (!maestraBody) return;
   maestraBody.innerHTML = "";
   const unicos = {};
-  // Llave única combinada para permitir códigos repetidos en distintos CEDIS
   lista.forEach(u => { 
     const key = `${u.codVendedor}_${u.cedis}`;
     if(!unicos[key]) unicos[key] = u; 
@@ -196,7 +192,6 @@ document.getElementById("btnVerTodosMov").onclick = async () => {
   toggleLoader(true);
   try {
     const snapUsers = await getDocs(collection(db, "usuariosPorFecha"));
-    // Obtener pares únicos de [codVendedor, cedis]
     const paresUnicos = [];
     const registrosVistos = new Set();
 
@@ -289,6 +284,30 @@ async function loadProducts() {
     body.innerHTML += `<tr><td>${p.producto}</td><td style="text-align:center;"><img src="assets/productos/${p.producto}.png" width="40" onerror="this.src='assets/logo.png'"></td><td style="text-align:center;">${p.coins}</td></tr>`;
   });
 }
+
+/* ===================================================
+   LÓGICA PARA COLAPSAR SECCIONES (ACORDEÓN)
+   =================================================== */
+document.addEventListener('DOMContentLoaded', () => {
+    const titulosColapsables = document.querySelectorAll('.collapsible');
+
+    titulosColapsables.forEach(titulo => {
+        titulo.addEventListener('click', () => {
+            const card = titulo.parentElement;
+            const indicador = titulo.querySelector('span');
+            
+            // Alternar clase closed
+            card.classList.toggle('closed');
+            
+            // Cambiar símbolo + / −
+            if (card.classList.contains('closed')) {
+                indicador.innerText = '+';
+            } else {
+                indicador.innerText = '−';
+            }
+        });
+    });
+});
 
 // Iniciar todo al cargar
 loadUsers(); loadProducts(); loadCompras();
