@@ -32,6 +32,15 @@
   <section id="login" class="card">
     <h2>Ingresa</h2>
 
+    <select id="cedisInput" style="width: 100%; padding: 10px; margin-bottom: 15px; border-radius: 8px; border: 1px solid #ccc;">
+      <option value="">Selecciona tu CEDIS</option>
+      <option value="GUAYAQUIL">Guayaquil</option>
+      <option value="QUITO">Quito</option>
+      <option value="CUENCA">Cuenca</option>
+      <option value="MANTA">Manta</option>
+      <option value="SANTO DOMINGO">Santo Domingo</option>
+      </select>
+
     <input id="cedulaInput" type="text" placeholder="Código de Vendedor" maxlength="10">
     <input id="passwordInput" type="password" placeholder="Contraseña">
 
@@ -111,6 +120,14 @@
   <div class="modal-content">
     <h4 id="tituloRecuperar">Recuperar Acceso</h4>
     <div id="step1Recuperar">
+      <select id="cedisRecuperar" style="width: 100%; padding: 10px; margin-bottom: 10px; border-radius: 8px; border: 1px solid #ccc;">
+        <option value="">Selecciona tu CEDIS</option>
+        <option value="GUAYAQUIL">Guayaquil</option>
+        <option value="QUITO">Quito</option>
+        <option value="CUENCA">Cuenca</option>
+        <option value="MANTA">Manta</option>
+        <option value="SANTO DOMINGO">Santo Domingo</option>
+      </select>
       <input type="text" id="codRecuperar" placeholder="Código de Vendedor">
       <input type="email" id="emailRecuperar" placeholder="Correo electrónico">
       <button id="btnEnviarCodigo">Enviar Código</button>
