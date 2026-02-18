@@ -4,19 +4,21 @@ import {
   query, where, Timestamp
 } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
+// NUEVAS CREDENCIALES AJECOINS26
 const firebaseConfig = {
-  apiKey: "AIzaSyCsz2EP8IsTlG02uU2_GRfyQeeajMDuJjI",
-  authDomain: "ajecoins-73829.firebaseapp.com",
-  projectId: "ajecoins-73829",
-  storageBucket: "ajecoins-73829.firebasestorage.app",
-  messagingSenderId: "247461322350",
-  appId: "1:247461322350:web:802185ad39249ca650507f"
+  apiKey: "AIzaSyAmfn78n85qiOzmu-u9nwsPiOlXXFDYwcU",
+  authDomain: "ajecoins26-3d123.firebaseapp.com",
+  projectId: "ajecoins26-3d123",
+  storageBucket: "ajecoins26-3d123.firebasestorage.app",
+  messagingSenderId: "377488479071",
+  appId: "1:377488479071:web:3ea4c4c9a6b2380e375cea",
+  measurementId: "G-C7CW2P54ZY"
 };
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-/* =================== VARIABLES DE CACHE PARA EXPORTAR =================== */
+/* =================== VARIABLES DE CACHE =================== */
 let cacheUsuarios = [];
 let cacheCompras = [];
 let cacheMovimientos = [];
@@ -71,25 +73,15 @@ async function loadUsers() {
   const snap = await getDocs(collection(db, "usuariosPorFecha"));
   cacheUsuarios = [];
   snap.forEach(d => cacheUsuarios.push(d.data()));
-  renderListaMaestra(cacheUsuarios);
   renderCargas(cacheUsuarios);
-}
-
-function renderListaMaestra(lista) {
-  const maestraBody = document.getElementById("maestraBody");
-  maestraBody.innerHTML = "";
-  const unicos = {};
-  lista.forEach(u => { if(!unicos[u.codVendedor]) unicos[u.codVendedor] = u; });
-  Object.values(unicos).forEach(u => {
-    maestraBody.innerHTML += `<tr><td>${u.codVendedor}</td><td>${u.nombre}</td><td>${u.cedis}</td><td><button class="btn-eliminar" onclick="eliminarUsuarioTotal('${u.codVendedor}')">Eliminar Todo</button></td></tr>`;
-  });
 }
 
 function renderCargas(lista) {
   const usersBody = document.querySelector("#usersTable tbody");
   usersBody.innerHTML = "";
   lista.sort((a,b) => a.fecha.localeCompare(b.fecha)).forEach(u => {
-    usersBody.innerHTML += `<tr><td>${u.fecha}</td><td>${u.codVendedor}</td><td>${u.nombre}</td><td>${u.coins_ganados}</td></tr>`;
+    // AJUSTE: Se añade columna de CEDIS para que coincida con el HTML
+    usersBody.innerHTML += `<tr><td>${u.fecha}</td><td>${u.codVendedor}</td><td>${u.nombre}</td><td>${u.cedis}</td><td>${u.coins_ganados}</td></tr>`;
   });
 }
 
@@ -109,18 +101,18 @@ async function loadCompras() {
   const body = document.querySelector("#comprasTable tbody");
   body.innerHTML = "";
   cacheCompras.sort((a,b) => a.fecha.toMillis() - b.fecha.toMillis()).forEach(c => {
-    body.innerHTML += `<tr><td>${c.fecha.toDate().toLocaleString()}</td><td>${c.codVendedor}</td><td>${c.nombre}</td><td>${c.items.map(i=>i.nombre).join(", ")}</td><td>${c.total}</td></tr>`;
+    body.innerHTML += `<tr><td>${c.fecha.toDate().toLocaleString()}</td><td>${c.codVendedor}</td><td>${c.nombre}</td><td>${c.cedis}</td><td>${c.items.map(i=>i.nombre).join(", ")}</td><td>${c.total}</td></tr>`;
   });
 }
 
 document.getElementById("btnExport").onclick = () => {
   if(!cacheCompras.length) return alert("No hay compras");
-  const filas = [["Fecha", "Cod Vendedor", "Nombre", "Productos", "Total"]];
-  cacheCompras.forEach(c => filas.push([c.fecha.toDate().toLocaleString(), c.codVendedor, c.nombre, c.items.map(i=>i.nombre).join(", "), c.total]));
+  const filas = [["Fecha", "Cod Vendedor", "Nombre", "Cedis", "Productos", "Total"]];
+  cacheCompras.forEach(c => filas.push([c.fecha.toDate().toLocaleString(), c.codVendedor, c.nombre, c.cedis, c.items.map(i=>i.nombre).join(", "), c.total]));
   descargarCSV("reporte_compras.csv", filas);
 };
 
-/* =================== MOVIMIENTOS (EL ARREGLO QUE PEDISTE) =================== */
+/* =================== MOVIMIENTOS =================== */
 document.getElementById("btnVerMov").onclick = async () => {
   const cod = document.getElementById("movCedula").value.trim();
   if(!cod) return alert("Escribe un código");
@@ -144,22 +136,22 @@ document.getElementById("btnVerTodosMov").onclick = async () => {
 async function obtenerMovimientos(cod) {
   let mov = []; let saldo = 0;
   const ing = await getDocs(query(collection(db, "usuariosPorFecha"), where("codVendedor", "==", cod)));
-  ing.forEach(d => { const u = d.data(); mov.push({ cod: u.codVendedor, nom: u.nombre, fec: u.fecha, con: "Carga", cns: u.coins_ganados }); });
+  ing.forEach(d => { const u = d.data(); mov.push({ cod: u.codVendedor, nom: u.nombre, ced: u.cedis, fec: u.fecha, con: "Carga", cns: u.coins_ganados }); });
   const com = await getDocs(query(collection(db, "compras"), where("codVendedor", "==", cod)));
-  com.forEach(d => { const c = d.data(); mov.push({ cod: c.codVendedor, nom: c.nombre, fec: c.fecha.toDate().toISOString().slice(0, 10), con: "Canje", cns: -c.total }); });
+  com.forEach(d => { const c = d.data(); mov.push({ cod: c.codVendedor, nom: c.nombre, ced: c.cedis, fec: c.fecha.toDate().toISOString().slice(0, 10), con: "Canje", cns: -c.total }); });
   mov.sort((a, b) => new Date(a.fec) - new Date(b.fec)).forEach(m => { saldo += m.cns; m.sld = saldo; });
   return mov;
 }
 
 function renderMov(lista) {
   const body = document.querySelector("#movTable tbody");
-  body.innerHTML = lista.length ? lista.map(m => `<tr><td>${m.cod}</td><td>${m.nom}</td><td>${m.fec}</td><td>${m.con}</td><td style="color:${m.cns>=0?'green':'red'}">${m.cns}</td><td>${m.sld}</td></tr>`).join('') : "<tr><td colspan='6'>No hay datos</td></tr>";
+  body.innerHTML = lista.length ? lista.map(m => `<tr><td>${m.cod}</td><td>${m.nom}</td><td>${m.ced}</td><td>${m.fec}</td><td>${m.con}</td><td style="color:${m.cns>=0?'green':'red'}">${m.cns}</td><td>${m.sld}</td></tr>`).join('') : "<tr><td colspan='7'>No hay datos</td></tr>";
 }
 
 document.getElementById("btnExportMov").onclick = () => {
   if(!cacheMovimientos.length) return alert("No hay movimientos en pantalla");
-  const filas = [["Codigo", "Nombre", "Fecha", "Concepto", "Coins", "Saldo"]];
-  cacheMovimientos.forEach(m => filas.push([m.cod, m.nom, m.fec, m.con, m.cns, m.sld]));
+  const filas = [["Codigo", "Nombre", "Cedis", "Fecha", "Concepto", "Coins", "Saldo"]];
+  cacheMovimientos.forEach(m => filas.push([m.cod, m.nom, m.ced, m.fec, m.con, m.cns, m.sld]));
   descargarCSV("reporte_movimientos.csv", filas);
 };
 
@@ -183,5 +175,4 @@ async function loadProducts() {
   snap.forEach(d => { const p = d.data(); body.innerHTML += `<tr><td>${p.producto}</td><td><img src="assets/productos/${p.producto}.png" width="40"></td><td>${p.coins}</td></tr>`; });
 }
 
-// Iniciar todo
 loadUsers(); loadProducts(); loadCompras();
