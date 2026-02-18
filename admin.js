@@ -21,17 +21,11 @@ let cacheUsuarios = [];
 let cacheCompras = [];
 let cacheMovimientos = [];
 
-/* =================== UTILIDADES CORREGIDAS =================== */
+/* =================== UTILIDADES =================== */
 function normalizarFecha(fecha) {
-  if (!fecha || typeof fecha !== "string" || fecha.trim() === "") return "2026-01-01";
   if (fecha.includes("-")) return fecha;
-  const partes = fecha.split("/");
-  if (partes.length < 3) return fecha;
-  const [d, m, y] = partes;
-  const dia = (d || "01").padStart(2, "0");
-  const mes = (m || "01").padStart(2, "0");
-  const anio = y || "2026";
-  return `${anio}-${mes}-${dia}`;
+  const [d, m, y] = fecha.split("/");
+  return `${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`;
 }
 
 function descargarCSV(nombre, filas) {
@@ -43,75 +37,33 @@ function descargarCSV(nombre, filas) {
   a.click();
 }
 
-function toggleLoader(show) {
-  const loader = document.getElementById('loader');
-  if (loader) {
-    if (show) loader.classList.add('active'); 
-    else loader.classList.remove('active');   
-  }
-}
-
-/* =================== ELIMINAR USUARIO (AHORA POR SEDE) =================== */
-window.eliminarUsuarioTotal = async (codVendedor, cedis) => {
-  if (!confirm(`⚠️ ¿ELIMINAR acceso y coins del vendedor ${codVendedor} en ${cedis}?`)) return;
-  toggleLoader(true);
+/* =================== ELIMINAR USUARIO =================== */
+window.eliminarUsuarioTotal = async (codVendedor) => {
+  if (!confirm(`⚠️ ¿ELIMINAR acceso y coins del vendedor ${codVendedor}?`)) return;
   try {
-    const loginId = `${codVendedor}_${cedis}`;
-    await deleteDoc(doc(db, "credenciales", loginId));
-    
-    const q = query(collection(db, "usuariosPorFecha"), 
-                    where("codVendedor", "==", codVendedor),
-                    where("cedis", "==", cedis));
-    const snapCargas = await getDocs(q);
+    await deleteDoc(doc(db, "credenciales", codVendedor));
+    const snapCargas = await getDocs(query(collection(db, "usuariosPorFecha"), where("codVendedor", "==", codVendedor)));
     for (const d of snapCargas.docs) { await deleteDoc(doc(db, "usuariosPorFecha", d.id)); }
-    
-    alert(`Usuario ${codVendedor} de ${cedis} eliminado.`);
+    alert(`Usuario ${codVendedor} eliminado.`);
     loadUsers();
-  } catch (err) { 
-    alert("Error al eliminar"); 
-  } finally {
-    toggleLoader(false);
-  }
+  } catch (err) { alert("Error al eliminar"); }
 };
 
-/* =================== CARGA CSV USUARIOS =================== */
+/* =================== CARGA CSV =================== */
 document.getElementById("uploadBtn").onclick = async () => {
   const file = document.getElementById("fileInput").files[0];
   if (!file) return alert("Selecciona CSV");
-  
-  toggleLoader(true);
-  try {
-    const text = await file.text();
-    const lines = text.trim().split("\n").slice(1).filter(line => line.trim() !== "");
-
-    for (const line of lines) {
-      const data = line.split(";").map(x => x.trim());
-      if (data.length < 5) continue; 
-
-      const [fechaRaw, codVendedor, nombre, cedis, coins] = data;
-      if (!fechaRaw || !codVendedor || !cedis) continue;
-      
-      const fechaNormal = normalizarFecha(fechaRaw);
-      const cedisLimpio = cedis.toUpperCase();
-
-      const idDoc = `${fechaNormal}_${codVendedor}_${cedisLimpio.replace(/\s+/g, '')}`;
-
-      await setDoc(doc(db, "usuariosPorFecha", idDoc), {
-        fecha: fechaNormal, 
-        codVendedor, 
-        nombre, 
-        cedis: cedisLimpio, 
-        coins_ganados: Number(String(coins).replace(/,/g, "")) || 0,
-        creado: Timestamp.now()
-      }, { merge: true });
-    }
-    alert("Carga de usuarios completada");
-    loadUsers();
-  } catch (err) {
-    alert("Error al procesar el archivo");
-  } finally {
-    toggleLoader(false);
+  const text = await file.text();
+  const lines = text.trim().split("\n").slice(1);
+  for (const line of lines) {
+    const [fechaRaw, codVendedor, nombre, cedis, coins] = line.split(";").map(x => x.trim());
+    if (!fechaRaw || !codVendedor) continue;
+    await setDoc(doc(db, "usuariosPorFecha", `${normalizarFecha(fechaRaw)}_${codVendedor}`), {
+      fecha: normalizarFecha(fechaRaw), codVendedor, nombre, cedis, coins_ganados: Number(coins), creado: Timestamp.now()
+    }, { merge: true });
   }
+  alert("Carga completada");
+  loadUsers();
 };
 
 /* =================== TABLAS Y RENDERS =================== */
@@ -125,24 +77,19 @@ async function loadUsers() {
 
 function renderListaMaestra(lista) {
   const maestraBody = document.getElementById("maestraBody");
-  if (!maestraBody) return;
   maestraBody.innerHTML = "";
   const unicos = {};
-  lista.forEach(u => { 
-    const key = `${u.codVendedor}_${u.cedis}`;
-    if(!unicos[key]) unicos[key] = u; 
-  });
+  lista.forEach(u => { if(!unicos[u.codVendedor]) unicos[u.codVendedor] = u; });
   Object.values(unicos).forEach(u => {
-    maestraBody.innerHTML += `<tr><td>${u.codVendedor}</td><td>${u.nombre}</td><td>${u.cedis}</td><td style="text-align:center;"><button class="btn-eliminar" onclick="eliminarUsuarioTotal('${u.codVendedor}', '${u.cedis}')" style="width:auto; background:#d9534f;">Eliminar Todo</button></td></tr>`;
+    maestraBody.innerHTML += `<tr><td>${u.codVendedor}</td><td>${u.nombre}</td><td>${u.cedis}</td><td><button class="btn-eliminar" onclick="eliminarUsuarioTotal('${u.codVendedor}')">Eliminar Todo</button></td></tr>`;
   });
 }
 
 function renderCargas(lista) {
   const usersBody = document.querySelector("#usersTable tbody");
-  if (!usersBody) return;
   usersBody.innerHTML = "";
   lista.sort((a,b) => a.fecha.localeCompare(b.fecha)).forEach(u => {
-    usersBody.innerHTML += `<tr><td>${u.fecha}</td><td>${u.codVendedor}</td><td>${u.nombre} (<i>${u.cedis}</i>)</td><td style="text-align:center;">${u.coins_ganados}</td></tr>`;
+    usersBody.innerHTML += `<tr><td>${u.fecha}</td><td>${u.codVendedor}</td><td>${u.nombre}</td><td>${u.coins_ganados}</td></tr>`;
   });
 }
 
@@ -160,10 +107,9 @@ async function loadCompras() {
   cacheCompras = [];
   snap.forEach(d => cacheCompras.push(d.data()));
   const body = document.querySelector("#comprasTable tbody");
-  if (!body) return;
   body.innerHTML = "";
   cacheCompras.sort((a,b) => a.fecha.toMillis() - b.fecha.toMillis()).forEach(c => {
-    body.innerHTML += `<tr><td>${c.fecha.toDate().toLocaleString()}</td><td>${c.codVendedor}</td><td>${c.nombre}</td><td>${c.items.map(i=>i.nombre).join(", ")}</td><td style="text-align:center;">${c.total}</td></tr>`;
+    body.innerHTML += `<tr><td>${c.fecha.toDate().toLocaleString()}</td><td>${c.codVendedor}</td><td>${c.nombre}</td><td>${c.items.map(i=>i.nombre).join(", ")}</td><td>${c.total}</td></tr>`;
   });
 }
 
@@ -174,66 +120,40 @@ document.getElementById("btnExport").onclick = () => {
   descargarCSV("reporte_compras.csv", filas);
 };
 
-/* =================== MOVIMIENTOS =================== */
+/* =================== MOVIMIENTOS (EL ARREGLO QUE PEDISTE) =================== */
 document.getElementById("btnVerMov").onclick = async () => {
   const cod = document.getElementById("movCedula").value.trim();
-  const cedis = prompt("Ingrese el CEDIS del vendedor (EJ: QUITO):");
-  if(!cod || !cedis) return alert("Código y CEDIS son obligatorios");
-  toggleLoader(true);
-  try {
-    cacheMovimientos = await obtenerMovimientos(cod, cedis.toUpperCase());
-    renderMov(cacheMovimientos);
-  } finally {
-    toggleLoader(false);
-  }
+  if(!cod) return alert("Escribe un código");
+  cacheMovimientos = await obtenerMovimientos(cod);
+  renderMov(cacheMovimientos);
 };
 
 document.getElementById("btnVerTodosMov").onclick = async () => {
-  toggleLoader(true);
-  try {
-    const snapUsers = await getDocs(collection(db, "usuariosPorFecha"));
-    const paresUnicos = [];
-    const registrosVistos = new Set();
-
-    snapUsers.forEach(doc => {
-        const d = doc.data();
-        const key = `${d.codVendedor}_${d.cedis}`;
-        if (!registrosVistos.has(key)) {
-            registrosVistos.add(key);
-            paresUnicos.push({ cod: d.codVendedor, cedis: d.cedis });
-        }
-    });
-    
-    let totalMovs = [];
-    for (const par of paresUnicos) {
-      const m = await obtenerMovimientos(par.cod, par.cedis);
-      totalMovs = totalMovs.concat(m);
-    }
-    cacheMovimientos = totalMovs.sort((a,b) => new Date(a.fec) - new Date(b.fec));
-    renderMov(cacheMovimientos);
-  } finally {
-    toggleLoader(false);
+  const snapUsers = await getDocs(collection(db, "usuariosPorFecha"));
+  const todosLosCodigos = [...new Set(snapUsers.docs.map(d => d.data().codVendedor))];
+  
+  let totalMovs = [];
+  for (const cod of todosLosCodigos) {
+    const m = await obtenerMovimientos(cod);
+    totalMovs = totalMovs.concat(m);
   }
+  cacheMovimientos = totalMovs.sort((a,b) => new Date(a.fec) - new Date(b.fec));
+  renderMov(cacheMovimientos);
 };
 
-async function obtenerMovimientos(cod, cedis) {
+async function obtenerMovimientos(cod) {
   let mov = []; let saldo = 0;
-  const qIng = query(collection(db, "usuariosPorFecha"), where("codVendedor", "==", cod), where("cedis", "==", cedis));
-  const ing = await getDocs(qIng);
-  ing.forEach(d => { const u = d.data(); mov.push({ cod: u.codVendedor, nom: u.nombre, fec: u.fecha, con: `Carga (${u.cedis})`, cns: u.coins_ganados }); });
-  
-  const qCom = query(collection(db, "compras"), where("codVendedor", "==", cod), where("cedis", "==", cedis));
-  const com = await getDocs(qCom);
+  const ing = await getDocs(query(collection(db, "usuariosPorFecha"), where("codVendedor", "==", cod)));
+  ing.forEach(d => { const u = d.data(); mov.push({ cod: u.codVendedor, nom: u.nombre, fec: u.fecha, con: "Carga", cns: u.coins_ganados }); });
+  const com = await getDocs(query(collection(db, "compras"), where("codVendedor", "==", cod)));
   com.forEach(d => { const c = d.data(); mov.push({ cod: c.codVendedor, nom: c.nombre, fec: c.fecha.toDate().toISOString().slice(0, 10), con: "Canje", cns: -c.total }); });
-  
   mov.sort((a, b) => new Date(a.fec) - new Date(b.fec)).forEach(m => { saldo += m.cns; m.sld = saldo; });
   return mov;
 }
 
 function renderMov(lista) {
-  const body = document.getElementById("movBody"); 
-  if (!body) return;
-  body.innerHTML = lista.length ? lista.map(m => `<tr><td>${m.cod}</td><td>${m.nom}</td><td>${m.fec}</td><td>${m.con}</td><td style="color:${m.cns>=0?'green':'red'}; text-align:center;">${m.cns}</td><td style="text-align:center;">${m.sld}</td></tr>`).join('') : "<tr><td colspan='6'>No hay datos</td></tr>";
+  const body = document.querySelector("#movTable tbody");
+  body.innerHTML = lista.length ? lista.map(m => `<tr><td>${m.cod}</td><td>${m.nom}</td><td>${m.fec}</td><td>${m.con}</td><td style="color:${m.cns>=0?'green':'red'}">${m.cns}</td><td>${m.sld}</td></tr>`).join('') : "<tr><td colspan='6'>No hay datos</td></tr>";
 }
 
 document.getElementById("btnExportMov").onclick = () => {
@@ -246,68 +166,22 @@ document.getElementById("btnExportMov").onclick = () => {
 /* =================== PRODUCTOS =================== */
 document.getElementById("uploadProductBtn").onclick = async () => {
   const file = document.getElementById("productFileInput").files[0];
-  if (!file) return alert("Selecciona CSV de productos");
-  
-  toggleLoader(true);
-  try {
-    const text = await file.text();
-    const lines = text.trim().split("\n").slice(1).filter(l => l.trim() !== "");
-    for (const line of lines) {
-      const parts = line.replace(/"/g, "").split(";");
-      if (parts.length < 2) continue;
-      const [nombre, coins] = parts;
-      
-      const valorCoins = Number(String(coins).replace(/,/g, "")) || 0; 
-      const nombreLimpio = nombre.trim();
-
-      await setDoc(doc(db, "productos", nombreLimpio), { 
-        producto: nombreLimpio, 
-        coins: valorCoins 
-      }, { merge: true });
-    }
-    alert("Inventario de productos actualizado");
-    loadProducts();
-  } catch (err) {
-    alert("Error al cargar productos");
-  } finally {
-    toggleLoader(false);
+  if (!file) return;
+  const text = await file.text();
+  const lines = text.trim().split("\n").slice(1);
+  for (const line of lines) {
+    const [nombre, coins] = line.replace(/"/g, "").split(";");
+    await setDoc(doc(db, "productos", nombre.trim()), { producto: nombre.trim(), coins: Number(coins) });
   }
+  loadProducts();
 };
 
 async function loadProducts() {
   const snap = await getDocs(collection(db, "productos"));
   const body = document.querySelector("#productsTable tbody");
-  if (!body) return;
   body.innerHTML = "";
-  snap.forEach(d => { 
-    const p = d.data(); 
-    body.innerHTML += `<tr><td>${p.producto}</td><td style="text-align:center;"><img src="assets/productos/${p.producto}.png" width="40" onerror="this.src='assets/logo.png'"></td><td style="text-align:center;">${p.coins}</td></tr>`;
-  });
+  snap.forEach(d => { const p = d.data(); body.innerHTML += `<tr><td>${p.producto}</td><td><img src="assets/productos/${p.producto}.png" width="40"></td><td>${p.coins}</td></tr>`; });
 }
 
-/* ===================================================
-   LÓGICA PARA COLAPSAR SECCIONES (ACORDEÓN)
-   =================================================== */
-document.addEventListener('DOMContentLoaded', () => {
-    const titulosColapsables = document.querySelectorAll('.collapsible');
-
-    titulosColapsables.forEach(titulo => {
-        titulo.addEventListener('click', () => {
-            const card = titulo.parentElement;
-            const indicador = titulo.querySelector('span');
-            
-            // Alternar clase closed
-            card.classList.toggle('closed');
-            
-            // Cambiar símbolo + / −
-            if (card.classList.contains('closed')) {
-                indicador.innerText = '+';
-            } else {
-                indicador.innerText = '−';
-            }
-        });
-    });
-});
-
-// Iniciar todo al cargar
+// Iniciar todo
 loadUsers(); loadProducts(); loadCompras();
