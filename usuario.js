@@ -1,4 +1,4 @@
-/* ================= CONFIGURACIÓN FIREBASE (COMPAT) ================= */
+/* ================= CONFIGURACIÓN ================= */
 const firebaseConfig = {
   apiKey: "AIzaSyCsz2EP8IsTlG02uU2_GRfyQeeajMDuJjI",
   authDomain: "ajecoins-73829.firebaseapp.com",
@@ -8,10 +8,7 @@ const firebaseConfig = {
   appId: "1:247461322350:web:802185ad39249ca650507f"
 };
 
-// Inicializar Firebase si no está inicializado
-if (!firebase.apps.length) {
-    firebase.initializeApp(firebaseConfig);
-}
+firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
 /* ================= ELEMENTOS UI ================= */
@@ -19,7 +16,6 @@ const loginCard = document.getElementById('login');
 const cuentaCard = document.getElementById('cuenta');
 const cedulaInput = document.getElementById('cedulaInput'); 
 const passwordInput = document.getElementById('passwordInput');
-const cedisInput = document.getElementById('cedisInput'); 
 const ingresarBtn = document.getElementById('ingresarBtn');
 const cerrarBtn = document.getElementById('cerrarBtn');
 const btnCambiarPass = document.getElementById('btnCambiarPass');
@@ -29,13 +25,10 @@ const errorMsg = document.getElementById('errorMsg');
 const tiendaDiv = document.getElementById('productosTienda');
 const carritoList = document.getElementById('carritoList');
 const bolsaSpan = document.getElementById('bolsa');
-const movimientosBody = document.getElementById('movimientosBody'); 
+const movimientosBody = document.getElementById('movimientosBody'); // Referencia a la nueva tabla
 const loader = document.getElementById('loader');
-
-// Modales
 const modalCorreo = document.getElementById('modalCorreo');
 const modalRecuperar = document.getElementById('modalRecuperar');
-const modalFin = document.getElementById('modalFin');
 
 /* ================= VARIABLES GLOBALES ================= */
 let coinsUsuario = 0;
@@ -43,84 +36,75 @@ let carrito = [];
 let userCod = ''; 
 let userNombre = '';
 let userCedis = '';
-let userLoginId = ''; 
 let codigoGenerado = "";
 
-/* ================= INICIO / CARGA DE CEDIS ================= */
-async function cargarCedisDinamicos() {
-    try {
-        const snap = await db.collection('usuariosPorFecha').get();
-        const listaCedis = new Set();
-        snap.forEach(doc => {
-            const d = doc.data();
-            if (d.cedis) listaCedis.add(d.cedis.toUpperCase().trim());
-        });
+/* ================= EVENTOS ================= */
+ingresarBtn.addEventListener('click', buscarUsuario);
+cerrarBtn.addEventListener('click', () => location.reload());
+document.getElementById('btnConfirmar').addEventListener('click', confirmarCompra);
+document.getElementById('btnCancelar').addEventListener('click', cerrarModal);
+btnCambiarPass.addEventListener("click", cambiarPassword);
 
-        const cedisOrdenados = Array.from(listaCedis).sort();
-        const selects = [cedisInput, document.getElementById('cedisRecuperar')];
-        
-        selects.forEach(sel => {
-            if (!sel) return;
-            sel.innerHTML = '<option value="">Selecciona tu CEDIS</option>';
-            cedisOrdenados.forEach(nombre => {
-                const opt = document.createElement('option');
-                opt.value = nombre;
-                opt.textContent = nombre;
-                sel.appendChild(opt);
-            });
-        });
-    } catch (err) { console.error("Error cargando CEDIS:", err); }
-}
-cargarCedisDinamicos();
+document.getElementById('btnGuardarEmail').addEventListener('click', guardarEmail);
+document.getElementById('olvideLink').addEventListener('click', (e) => {
+    e.preventDefault();
+    modalRecuperar.classList.remove('hidden');
+});
+document.getElementById('btnEnviarCodigo').addEventListener('click', flujoEnviarCodigo);
+document.getElementById('btnRestablecer').addEventListener('click', restablecerPassword);
+document.getElementById('btnCerrarRecuperar').addEventListener('click', () => modalRecuperar.classList.add('hidden'));
 
 /* ================= LOADER ================= */
 function mostrarLoader(mensaje='Procesando…'){
   loader.querySelector('p').textContent = mensaje;
   loader.classList.add('active');
 }
-function ocultarLoader(){ loader.classList.remove('active'); }
+function ocultarLoader(){
+  loader.classList.remove('active');
+}
+
+/* ================= CREDENCIALES ================= */
+async function crearCredencialSiNoExiste(cod){
+  const ref = db.collection("credenciales").doc(cod);
+  const doc = await ref.get();
+  if(!doc.exists){
+    await ref.set({
+      password: cod, 
+      creado: firebase.firestore.FieldValue.serverTimestamp(),
+      email: "",
+      requiereCambio: true 
+    });
+  }
+}
+
+async function obtenerCredencial(cod){
+  const doc = await db.collection("credenciales").doc(cod).get();
+  return doc.exists ? doc.data() : null;
+}
 
 /* ================= LOGIN Y SEGURIDAD ================= */
 async function buscarUsuario(){
   const cod = cedulaInput.value.trim();
   const pass = passwordInput.value.trim();
-  const cedisSel = cedisInput.value;
 
-  if(!cod || !pass || !cedisSel){
-    errorMsg.textContent='Código, contraseña y CEDIS obligatorios';
+  if(!cod || !pass){
+    errorMsg.textContent='Código y contraseña obligatorios';
     return;
   }
 
   mostrarLoader('Verificando credenciales…');
 
   try{
-    const snap = await db.collection('usuariosPorFecha')
-                         .where('codVendedor','==',cod)
-                         .where('cedis','==',cedisSel)
-                         .get();
+    const snap = await db.collection('usuariosPorFecha').where('codVendedor','==',cod).get();
     
     if(snap.empty){
-      errorMsg.textContent='Usuario no encontrado en este CEDIS';
+      errorMsg.textContent='Código de vendedor no encontrado';
       ocultarLoader();
       return;
     }
 
-    userLoginId = `${cod}_${cedisSel}`;
-    const credRef = db.collection("credenciales").doc(userLoginId);
-    const docCred = await credRef.get();
-    
-    let cred;
-    if(!docCred.exists){
-        await credRef.set({
-            password: cod,
-            requiereCambio: true,
-            email: "",
-            creado: firebase.firestore.FieldValue.serverTimestamp()
-        });
-        cred = { password: cod, requiereCambio: true, email: "" };
-    } else {
-        cred = docCred.data();
-    }
+    await crearCredencialSiNoExiste(cod);
+    const cred = await obtenerCredencial(cod);
 
     if(cred.password !== pass){
       errorMsg.textContent='Contraseña incorrecta';
@@ -129,16 +113,21 @@ async function buscarUsuario(){
     }
 
     userCod = cod;
-    userCedis = cedisSel;
 
     if (cred.requiereCambio === true) {
         ocultarLoader();
-        const nueva = prompt("🔒 SEGURIDAD: Cambia tu contraseña inicial (mín. 4 caracteres):");
-        if(!nueva || nueva.length < 4) { alert("Acceso denegado."); return; }
+        const nueva = prompt("🔒 SEGURIDAD: Debes cambiar tu contraseña inicial por una personal:");
+        if(!nueva || nueva.length < 4) {
+            alert("Acceso denegado. Debes definir una contraseña de al menos 4 caracteres.");
+            return;
+        }
         mostrarLoader('Actualizando...');
-        await credRef.update({ password: nueva, requiereCambio: false });
-        alert("Contraseña actualizada. Ingresa de nuevo.");
-        location.reload();
+        await db.collection("credenciales").doc(userCod).update({ 
+            password: nueva,
+            requiereCambio: false 
+        });
+        alert("Contraseña actualizada. Por favor, ingresa de nuevo.");
+        location.reload(); 
         return;
     }
 
@@ -148,27 +137,26 @@ async function buscarUsuario(){
         return; 
     }
 
-    // Cálculos de saldo
-    let totalCoins=0, fechaMasReciente='', nombre='';
+    let totalCoins=0, fechaMasReciente='', nombre='', cedis='';
     snap.forEach(doc=>{
       const d=doc.data();
       totalCoins += Number(d.coins_ganados);
       if(!fechaMasReciente || new Date(d.fecha)>new Date(fechaMasReciente)){
-        fechaMasReciente=d.fecha; nombre=d.nombre;
+        fechaMasReciente=d.fecha;
+        nombre=d.nombre;
+        cedis=d.cedis;
       }
     });
 
-    const snapCompras = await db.collection('compras')
-                                 .where('codVendedor','==',cod)
-                                 .where('cedis','==',cedisSel)
-                                 .get();
+    const snapCompras = await db.collection('compras').where('codVendedor','==',cod).get();
     let totalGastado=0;
     snapCompras.forEach(d=> totalGastado += Number(d.data().total));
 
     coinsUsuario = totalCoins - totalGastado;
     userNombre = nombre;
+    userCedis = cedis;
 
-    mostrarDatos({fecha:fechaMasReciente, codigo:cod, nombre, cedis:cedisSel});
+    mostrarDatos({fecha:fechaMasReciente, codigo:cod, nombre, cedis});
     coinsP.textContent = coinsUsuario;
 
     await cargarProductos();
@@ -177,10 +165,115 @@ async function buscarUsuario(){
   }catch(err){
     console.error(err);
     errorMsg.textContent='Error al cargar datos';
-  }finally{ ocultarLoader(); }
+  }finally{
+    ocultarLoader();
+  }
 }
 
-/* ================= GESTIÓN DE TIENDA Y CARRITO ================= */
+/* ================= RECUPERACIÓN ================= */
+async function guardarEmail() {
+    const email = document.getElementById('emailRegistroInput').value.trim();
+    if (!email.includes("@")) return alert("Ingresa un correo válido");
+    mostrarLoader('Guardando...');
+    await db.collection("credenciales").doc(userCod).update({ email: email });
+    location.reload();
+}
+
+async function flujoEnviarCodigo() {
+    const cod = document.getElementById('codRecuperar').value.trim();
+    const email = document.getElementById('emailRecuperar').value.trim();
+    mostrarLoader('Enviando código...');
+    const cred = await obtenerCredencial(cod);
+    if (!cred || cred.email !== email) { ocultarLoader(); return alert("Los datos no coinciden."); }
+    codigoGenerado = Math.floor(100000 + Math.random() * 900000).toString();
+    const templateParams = { user_name: cod, user_email: email, recovery_code: codigoGenerado };
+    try {
+        await emailjs.send('service_5zouh3m', 'template_fwvkczd', templateParams);
+        alert("Código enviado con éxito.");
+        document.getElementById('step1Recuperar').classList.add('hidden');
+        document.getElementById('step2Recuperar').classList.remove('hidden');
+    } catch (e) { alert("Error al enviar email."); } finally { ocultarLoader(); }
+}
+
+async function restablecerPassword() {
+    const codIn = document.getElementById('codigoVerificacionInput').value.trim();
+    const pass = document.getElementById('nuevaPassInput').value.trim();
+    const user = document.getElementById('codRecuperar').value.trim();
+    if (codIn !== codigoGenerado) return alert("Código incorrecto");
+    await db.collection("credenciales").doc(user).update({ password: pass, requiereCambio: false });
+    alert("Contraseña restablecida correctamente.");
+    location.reload();
+}
+
+/* ================= MOVIMIENTOS DETALLADOS (ESTILO ADMIN) ================= */
+async function cargarHistorial() {
+  movimientosBody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px;">Cargando movimientos...</td></tr>';
+  
+  try {
+    let movimientos = [];
+    let saldoCalc = 0;
+
+    // 1. Obtener CARGAS
+    const snapIngresos = await db.collection('usuariosPorFecha').where('codVendedor', '==', userCod).get();
+    snapIngresos.forEach(doc => {
+      const d = doc.data();
+      movimientos.push({
+        fecha: d.fecha,
+        concepto: "Carga de Coins",
+        coins: Number(d.coins_ganados)
+      });
+    });
+
+    // 2. Obtener COMPRAS
+    const snapCompras = await db.collection('compras').where('codVendedor', '==', userCod).get();
+    snapCompras.forEach(doc => {
+      const c = doc.data();
+      const fechaC = c.fecha.toDate().toISOString().slice(0, 10);
+      movimientos.push({
+        fecha: fechaC,
+        concepto: `Canje: ${c.items.map(i => i.nombre).join(", ")}`,
+        coins: -Number(c.total)
+      });
+    });
+
+    // 3. Ordenar por fecha (Antiguo a Reciente)
+    movimientos.sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
+
+    // 4. Renderizar
+    movimientosBody.innerHTML = '';
+    if (movimientos.length === 0) {
+      movimientosBody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px;">Sin movimientos</td></tr>';
+      return;
+    }
+
+    movimientos.forEach(m => {
+      saldoCalc += m.coins;
+      const colorC = m.coins >= 0 ? '#007a5a' : '#d9534f';
+      const prefijo = m.coins >= 0 ? '+' : '';
+
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td style="padding: 10px; border-bottom: 1px solid #eee;">${m.fecha}</td>
+        <td style="padding: 10px; border-bottom: 1px solid #eee;">${m.concepto}</td>
+        <td style="padding: 10px; border-bottom: 1px solid #eee; text-align:center; color:${colorC}; font-weight:bold;">${prefijo}${m.coins}</td>
+        <td style="padding: 10px; border-bottom: 1px solid #eee; text-align:center; font-weight:bold;">${saldoCalc}</td>
+      `;
+      movimientosBody.appendChild(tr);
+    });
+
+  } catch (err) {
+    console.error(err);
+    movimientosBody.innerHTML = '<tr><td colspan="4">Error al cargar historial</td></tr>';
+  }
+}
+
+/* ================= FUNCIONES UI Y TIENDA ================= */
+function mostrarDatos(u){
+  loginCard.classList.add('hidden');
+  cuentaCard.classList.remove('hidden');
+  datosUl.innerHTML=`<li><strong>Fecha:</strong> ${u.fecha}</li><li><strong>Código:</strong> ${u.codigo}</li><li><strong>Nombre:</strong> ${u.nombre}</li><li><strong>Cedis:</strong> ${u.cedis}</li>`;
+}
+
 async function cargarProductos(){
   tiendaDiv.innerHTML='';
   const snap = await db.collection('productos').get();
@@ -188,168 +281,58 @@ async function cargarProductos(){
     const p=doc.data();
     const div=document.createElement('div');
     div.className='tarjeta';
-    div.innerHTML=`
-        <img src="assets/productos/${p.producto}.png" onerror="this.src='assets/logo.png'">
-        <h4>${p.producto}</h4>
-        <b>${p.coins} c</b>
-        <button onclick="agregarAlCarrito('${p.producto}', ${p.coins})">Agregar</button>
-    `;
+    div.innerHTML=`<img src="assets/productos/${p.producto}.png"><h4>${p.producto}</h4><b>${p.coins} c</b><button>Agregar</button>`;
+    div.querySelector('button').onclick = ()=> agregarAlCarrito(p.producto, p.coins);
     tiendaDiv.appendChild(div);
   });
 }
 
 function agregarAlCarrito(nombre, precio){
-  const totalCarrito = carrito.reduce((sum, item) => sum + item.precio, 0);
-  if((totalCarrito + precio) > coinsUsuario){ 
-      alert('¡Coins insuficientes!'); 
-      return; 
-  }
+  if(coinsUsuario < precio){ alert('Coins insuficientes'); return; }
   carrito.push({nombre, precio});
   renderCarrito();
-}
-
-function eliminarDelCarrito(index) {
-    carrito.splice(index, 1);
-    renderCarrito();
 }
 
 function renderCarrito(){
   carritoList.innerHTML='';
   let total=0;
-  
-  carrito.forEach((item, index) => { 
-      total += item.precio; 
-      const li = document.createElement('li');
-      li.style.display = 'flex';
-      li.style.justifyContent = 'space-between';
-      li.style.alignItems = 'center';
-      li.style.padding = '5px 0';
-      li.style.borderBottom = '1px solid #eee';
-
-      li.innerHTML = `
-        <span style="font-size:14px;">${item.nombre} <b>(${item.precio}c)</b></span>
-        <button onclick="eliminarDelCarrito(${index})" style="background:#d9534f; color:white; border:none; border-radius:4px; padding:2px 6px; cursor:pointer; font-size:10px;">QUITAR</button>
-      `;
-      carritoList.appendChild(li);
-  });
-  
-  bolsaSpan.textContent = `${total} c`;
-
+  carrito.forEach(i=>{ total+=i.precio; carritoList.innerHTML += `<li>${i.nombre} <span>${i.precio} c</span></li>`; });
+  bolsaSpan.textContent=`${total} c`;
   let btnFin = document.getElementById('btnFin');
-  if(!btnFin) {
-      btnFin = document.createElement('button');
-      btnFin.id = 'btnFin';
-      btnFin.textContent = 'Finalizar compra';
-      btnFin.style.cssText = "width:100%; background:#007a5a; color:white; padding:10px; border:none; border-radius:8px; cursor:pointer; margin-top:10px; font-weight:bold;";
-      btnFin.onclick = abrirModal;
-      carritoList.after(btnFin);
-  }
-  btnFin.style.display = carrito.length > 0 ? 'block' : 'none';
+  if(carrito.length && !btnFin){
+    btnFin = document.createElement('button');
+    btnFin.id='btnFin'; btnFin.textContent='Finalizar compra';
+    btnFin.onclick = abrirModal;
+    carritoList.after(btnFin);
+  }else if(!carrito.length && btnFin){ btnFin.remove(); }
 }
 
 function abrirModal(){
   const total = carrito.reduce((a,b)=>a+b.precio,0);
   document.getElementById('totalFin').textContent=`Total: ${total} c`;
-  document.getElementById('resumenList').innerHTML = carrito.map(i=>`<li>${i.nombre} · ${i.precio} c</li>`).join('');
-  modalFin.classList.remove('hidden');
+  document.getElementById('resumenList').innerHTML = carrito.map(i=>`<li>${i.nombre} · ${i.precio}</li>`).join('');
+  document.getElementById('modalFin').classList.remove('hidden');
 }
 
-function cerrarModal(){ modalFin.classList.add('hidden'); }
+function cerrarModal(){ document.getElementById('modalFin').classList.add('hidden'); }
 
 async function confirmarCompra(){
   const total = carrito.reduce((a,b)=>a+b.precio,0);
   cerrarModal();
-  mostrarLoader('Procesando canje...');
-  
+  mostrarLoader('Procesando...');
   try{
-    await db.collection('compras').add({ 
-        codVendedor: userCod, 
-        nombre: userNombre, 
-        cedis: userCedis, 
-        items: carrito, 
-        total: total, 
-        fecha: firebase.firestore.FieldValue.serverTimestamp() 
-    });
-    
+    await db.collection('compras').add({ codVendedor: userCod, nombre: userNombre, cedis: userCedis, items: carrito, total: total, fecha: firebase.firestore.FieldValue.serverTimestamp() });
     coinsUsuario -= total;
     coinsP.textContent = coinsUsuario;
     carrito = [];
     renderCarrito();
-    await cargarHistorial();
-    alert("¡Canje exitoso! Retira tus productos.");
-  } catch(err) { alert('Error al procesar.'); } finally { ocultarLoader(); }
+    await cargarHistorial(); // Actualiza la tabla de movimientos tras la compra
+  }catch(err){ alert('Error'); }finally{ ocultarLoader(); }
 }
-
-/* ================= HISTORIAL Y PERFIL ================= */
-function mostrarDatos(u){
-  loginCard.classList.add('hidden');
-  cuentaCard.classList.remove('hidden');
-  datosUl.innerHTML=`<li><strong>Fecha:</strong> ${u.fecha}</li><li><strong>Código:</strong> ${u.codigo}</li><li><strong>Nombre:</strong> ${u.nombre}</li><li><strong>Cedis:</strong> ${u.cedis}</li>`;
-}
-
-async function cargarHistorial() {
-  movimientosBody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Cargando...</td></tr>';
-  try {
-    let movimientos = [];
-    let saldoCalc = 0;
-
-    const snapIngresos = await db.collection('usuariosPorFecha').where('codVendedor', '==', userCod).where('cedis', '==', userCedis).get();
-    snapIngresos.forEach(doc => {
-      const d = doc.data();
-      movimientos.push({ fecha: d.fecha, concepto: "Carga de Coins", coins: Number(d.coins_ganados) });
-    });
-
-    const snapCompras = await db.collection('compras').where('codVendedor', '==', userCod).where('cedis', '==', userCedis).get();
-    snapCompras.forEach(doc => {
-      const c = doc.data();
-      const fechaC = c.fecha ? c.fecha.toDate().toISOString().slice(0, 10) : '---';
-      movimientos.push({ fecha: fechaC, concepto: `Canje: ${c.items.map(i => i.nombre).join(", ")}`, coins: -Number(c.total) });
-    });
-
-    movimientos.sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
-    movimientosBody.innerHTML = '';
-    
-    movimientos.forEach(m => {
-      saldoCalc += m.coins;
-      const colorC = m.coins >= 0 ? '#007a5a' : '#d9534f';
-      movimientosBody.innerHTML += `
-        <tr>
-          <td>${m.fecha}</td>
-          <td>${m.concepto}</td>
-          <td style="color:${colorC}; font-weight:bold;">${m.coins >= 0 ? '+' : ''}${m.coins}</td>
-          <td style="font-weight:bold;">${saldoCalc}</td>
-        </tr>`;
-    });
-  } catch (err) { console.error(err); }
-}
-
-/* ================= EVENTOS DE BOTONES ================= */
-document.getElementById('btnGuardarEmail').onclick = async () => {
-    const email = document.getElementById('emailRegistroInput').value.trim();
-    if (!email.includes("@")) return alert("Correo inválido");
-    mostrarLoader('Guardando...');
-    await db.collection("credenciales").doc(userLoginId).update({ email: email });
-    alert("Registrado. Ingresa de nuevo.");
-    location.reload();
-};
 
 async function cambiarPassword(){
-  const nueva = prompt("Nueva contraseña (mín 4 caracteres):");
+  const nueva = prompt("Nueva contraseña:");
   if(!nueva || nueva.length < 4) return;
-  await db.collection("credenciales").doc(userLoginId).update({ password: nueva });
-  alert("Contraseña cambiada.");
+  await db.collection("credenciales").doc(userCod).update({ password: nueva });
+  alert("Cambiado.");
 }
-
-// Acordeón Historial
-const btnH = document.getElementById('btnDesplegarHistorial');
-if(btnH){
-    btnH.onclick = () => {
-        const panel = document.getElementById('historialAcordeon');
-        panel.classList.toggle('hidden');
-        btnH.querySelector('span').innerText = panel.classList.contains('hidden') ? '+' : '−';
-    };
-}
-
-document.getElementById('btnConfirmar').onclick = confirmarCompra;
-document.getElementById('btnCancelar').onclick = cerrarModal;
-btnCambiarPass.onclick = cambiarPassword;
