@@ -1,11 +1,12 @@
-/* ================= CONFIGURACIÓN ================= */
+/* ================= CONFIGURACIÓN AJECOINS26 ================= */
 const firebaseConfig = {
-  apiKey: "AIzaSyCsz2EP8IsTlG02uU2_GRfyQeeajMDuJjI",
-  authDomain: "ajecoins-73829.firebaseapp.com",
-  projectId: "ajecoins-73829",
-  storageBucket: "ajecoins-73829.appspot.com",
-  messagingSenderId: "247461322350",
-  appId: "1:247461322350:web:802185ad39249ca650507f"
+  apiKey: "AIzaSyAmfn78n85qiOzmu-u9nwsPiOlXXFDYwcU",
+  authDomain: "ajecoins26-3d123.firebaseapp.com",
+  projectId: "ajecoins26-3d123",
+  storageBucket: "ajecoins26-3d123.firebasestorage.app",
+  messagingSenderId: "377488479071",
+  appId: "1:377488479071:web:3ea4c4c9a6b2380e375cea",
+  measurementId: "G-C7CW2P54ZY"
 };
 
 firebase.initializeApp(firebaseConfig);
@@ -25,7 +26,7 @@ const errorMsg = document.getElementById('errorMsg');
 const tiendaDiv = document.getElementById('productosTienda');
 const carritoList = document.getElementById('carritoList');
 const bolsaSpan = document.getElementById('bolsa');
-const movimientosBody = document.getElementById('movimientosBody'); // Referencia a la nueva tabla
+const movimientosBody = document.getElementById('movimientosBody');
 const loader = document.getElementById('loader');
 const modalCorreo = document.getElementById('modalCorreo');
 const modalRecuperar = document.getElementById('modalRecuperar');
@@ -44,7 +45,6 @@ cerrarBtn.addEventListener('click', () => location.reload());
 document.getElementById('btnConfirmar').addEventListener('click', confirmarCompra);
 document.getElementById('btnCancelar').addEventListener('click', cerrarModal);
 btnCambiarPass.addEventListener("click", cambiarPassword);
-
 document.getElementById('btnGuardarEmail').addEventListener('click', guardarEmail);
 document.getElementById('olvideLink').addEventListener('click', (e) => {
     e.preventDefault();
@@ -205,41 +205,29 @@ async function restablecerPassword() {
     location.reload();
 }
 
-/* ================= MOVIMIENTOS DETALLADOS (ESTILO ADMIN) ================= */
+/* ================= HISTORIAL DE MOVIMIENTOS ================= */
 async function cargarHistorial() {
-  movimientosBody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px;">Cargando movimientos...</td></tr>';
+  movimientosBody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px;">Cargando...</td></tr>';
   
   try {
     let movimientos = [];
     let saldoCalc = 0;
 
-    // 1. Obtener CARGAS
     const snapIngresos = await db.collection('usuariosPorFecha').where('codVendedor', '==', userCod).get();
     snapIngresos.forEach(doc => {
       const d = doc.data();
-      movimientos.push({
-        fecha: d.fecha,
-        concepto: "Carga de Coins",
-        coins: Number(d.coins_ganados)
-      });
+      movimientos.push({ fecha: d.fecha, concepto: "Carga de Coins", coins: Number(d.coins_ganados) });
     });
 
-    // 2. Obtener COMPRAS
     const snapCompras = await db.collection('compras').where('codVendedor', '==', userCod).get();
     snapCompras.forEach(doc => {
       const c = doc.data();
       const fechaC = c.fecha.toDate().toISOString().slice(0, 10);
-      movimientos.push({
-        fecha: fechaC,
-        concepto: `Canje: ${c.items.map(i => i.nombre).join(", ")}`,
-        coins: -Number(c.total)
-      });
+      movimientos.push({ fecha: fechaC, concepto: `Canje: ${c.items.map(i => i.nombre).join(", ")}`, coins: -Number(c.total) });
     });
 
-    // 3. Ordenar por fecha (Antiguo a Reciente)
     movimientos.sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
 
-    // 4. Renderizar
     movimientosBody.innerHTML = '';
     if (movimientos.length === 0) {
       movimientosBody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px;">Sin movimientos</td></tr>';
@@ -262,12 +250,11 @@ async function cargarHistorial() {
     });
 
   } catch (err) {
-    console.error(err);
-    movimientosBody.innerHTML = '<tr><td colspan="4">Error al cargar historial</td></tr>';
+    movimientosBody.innerHTML = '<tr><td colspan="4">Error de carga</td></tr>';
   }
 }
 
-/* ================= FUNCIONES UI Y TIENDA ================= */
+/* ================= UI TIENDA ================= */
 function mostrarDatos(u){
   loginCard.classList.add('hidden');
   cuentaCard.classList.remove('hidden');
@@ -326,7 +313,7 @@ async function confirmarCompra(){
     coinsP.textContent = coinsUsuario;
     carrito = [];
     renderCarrito();
-    await cargarHistorial(); // Actualiza la tabla de movimientos tras la compra
+    await cargarHistorial();
   }catch(err){ alert('Error'); }finally{ ocultarLoader(); }
 }
 
